@@ -2,4 +2,5 @@ dependencies {
     implementation libs.springCloudEurekaServer
     compileOnly libs.lombok
     annotationProcessor libs.lombok
+    implementation libs.springCloudConfigClient
 }
