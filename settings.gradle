@@ -2,3 +2,5 @@ rootProject.name = 'E-Commerce'
 
 include 'EurekaServer'
 include 'ApiGateway'
+include 'AuthService'
+include 'UserProfileService'
