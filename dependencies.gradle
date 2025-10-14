@@ -35,11 +35,11 @@ ext{
             springCloudCircuitBreaker        : "org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j:$versions.springCloudCircuitBreaker", // Blocking Circuit Breaker
             springCloudCircuitBreakerReactor : "org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j:$versions.springCloudCircuitBreaker", // Reactive Circuit Breaker
 
-            // WebFlux ve Security (API Gateway için)
+            // WebFlux ve Security
             springBootStarterWebFlux         : "org.springframework.boot:spring-boot-starter-webflux:${versions.springBoot}", // WebFlux
             springSecurityOAuth2ResourceServer : "org.springframework.boot:spring-boot-starter-oauth2-resource-server:${versions.springBoot}", // JWT Resource Server
             springSecurityOAuth2Client : "org.springframework.boot:spring-boot-starter-oauth2-client:${versions.springBoot}", // OAuth2 Client (TokenRelay için gerekli)
-
+            springSecurityConfig : "org.springframework.boot:spring-boot-starter-security:${versions.springBoot}", // Security Config
 
             // Yardımcı Araçlar
             lombok                          : "org.projectlombok:lombok:${versions.lombok}", // Annotation Processor
