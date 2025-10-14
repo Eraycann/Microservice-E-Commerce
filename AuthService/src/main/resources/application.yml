@@ -1,33 +1,8 @@
 spring:
+  cloud:
+    config:
+      uri: http://localhost:8888
+  config:
+    import: "configserver:"
   application:
-    name: auth-service
-  # PostgreSQL Bağlantısı
-  datasource:
-    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=authdb
-    username: postgres
-    password: postgres
-  jpa:
-    hibernate:
-      ddl-auto: update
-
-  # Keycloak OAuth2 Client Ayarları
-  security:
-    oauth2:
-      client:
-        registration:
-          keycloak-oauth2:
-            client-id: external-client
-            client-secret: <KEYCLOAK_CLIENT_SECRET>
-            authorization-grant-type: password
-            scope: openid email profile
-        provider:
-          keycloak-oauth2:
-            issuer-uri: http://localhost:8180/realms/my-realm
-            token-uri: http://localhost:8180/realms/my-realm/protocol/openid-connect/token
-
-server:
-  port: 8082
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+    name: auth-application
