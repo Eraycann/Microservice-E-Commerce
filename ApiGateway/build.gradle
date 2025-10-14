@@ -6,4 +6,5 @@ dependencies {
     implementation libs.springSecurityOAuth2Client
     compileOnly libs.lombok
     annotationProcessor libs.lombok
+    implementation libs.springCloudConfigClient
 }
