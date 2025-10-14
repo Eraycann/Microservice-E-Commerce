@@ -1,4 +1,9 @@
 dependencies {
     implementation libs.springCloudGateway
     implementation libs.springCloudEurekaClient
+    implementation libs.springBootStarterWebFlux
+    implementation libs.springSecurityOAuth2ResourceServer
+    implementation libs.springSecurityOAuth2Client
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
 }
