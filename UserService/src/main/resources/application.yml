@@ -1,15 +1,19 @@
 server:
-  port: 8081 # User Service Portu
+  port: 8082 # User Service Portu
 
 spring:
   application:
     name: user-service
 
-  # --- MONGODB AYARLARI ---
+  # --- MONGODB AYARLARI (DÜZELTİLMİŞ) ---
   data:
     mongodb:
-      # Eğer kullanıcı adı/şifre varsa, URI kullanın:
-      uri: mongodb://admin:admin@localhost:27017/ecommerce-user-db
+      host: localhost
+      port: 27017
+      database: ecommerce-user-db # Verilerin yazılacağı yer
+      username: admin             # Docker'da verdiğin kullanıcı adı
+      password: admin             # Docker'da verdiğin şifre
+      authentication-database: admin # <--- KRİTİK AYAR BU! (Kullanıcının kayıtlı olduğu yer)
 
   # --- GÜVENLİK (Resource Server) ---
   security:
