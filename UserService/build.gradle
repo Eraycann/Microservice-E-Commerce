@@ -1,10 +1,9 @@
 dependencies {
     implementation libs.springBootStarterWeb
-    implementation libs.springBootDataJpa
-    runtimeOnly libs.postgreSQL
+    implementation libs.springBootDataMongo // <--- JPA ve Postgres yerine bu geldi
     implementation libs.springCloudEurekaClient
+    implementation libs.springSecurityOAuth2ResourceServer // Token doğrulamak için şart
     implementation libs.springSecurityConfig
     compileOnly libs.lombok
     annotationProcessor libs.lombok
-    implementation libs.springCloudConfigClient
 }

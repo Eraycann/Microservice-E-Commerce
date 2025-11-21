@@ -7,7 +7,21 @@ spring:
 
 eureka:
   client:
-    register-with-eureka: false # Kendisini kayıt etmesin
-    fetch-registry: false       # Kayıt defterini çekmesin
+    register-with-eureka: false # "Kendini rehbere kaydetme."
+    fetch-registry: false       # "Rehberi kimseden indirme."
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+
+
+# Neden false yapıyoruz?
+
+# Normalde bir mikroservis (örn: User Service),
+#  Eureka'ya bağlanınca "Beni kaydet" der (true) ve "Listeyi bana ver" der (true).
+
+# Ama bu uygulama Zaten Eureka'nın Kendisi.
+
+# register-with-eureka:
+# false: Aynanın karşısına geçip "Merhaba ben Eureka" diye kendine selam vermesine gerek yok.
+
+# fetch-registry: false: Telefon rehberinin aslı zaten kendisinde. Başkasından liste istemesine gerek yok.

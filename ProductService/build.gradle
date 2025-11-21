@@ -1,0 +1,10 @@
+dependencies {
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootDataJpa
+    implementation libs.postgreSQL
+    implementation libs.springCloudEurekaClient
+    implementation libs.springSecurityOAuth2ResourceServer // JWT doğrulaması için
+    implementation libs.springSecurityConfig
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+}

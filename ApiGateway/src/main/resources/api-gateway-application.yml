@@ -4,30 +4,80 @@ server:
 spring:
   application:
     name: api-gateway
-  cloud:
-    gateway:
-      discovery.locator.enabled: true # Servis isimleriyle yönlendirmeye izin ver
-      routes:
-        - id: auth_route
-          uri: lb://AuthService # AUTH-SERVICE'e yönlendir
-          predicates:
-            - Path=/api/auth/**
-        - id: profile_route
-          uri: lb://UserProfileService # USER-PROFILE-SERVICE'e yönlendir
-          predicates:
-            - Path=/api/profile/**
-          filters:
-            - TokenRelay= # Gelen JWT'yi iç servise ilet
+
+  # --- 1. GÜVENLİK (KEYCLOAK) ---
   security:
     oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8180/realms/ecommerce-realm
+            user-name-attribute: preferred_username
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: api-gateway-client
+            client-secret: 7qH8b8TS5cbkEYtXxjA58ZHMrebsy4LF
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid, profile, email, roles
       resourceserver:
         jwt:
-          # Keycloak'tan RSA Public Key'in alındığı adres (8180 Portu)
-          jwk-set-uri: http://localhost:8180/realms/my-realm/protocol/openid-connect/certs
-          # JWT'yi imzalayan otoritenin (Issuer) adresi
-          issuer-uri: http://localhost:8180/realms/my-realm
+          jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
+  # --- 2. GATEWAY ROUTING ---
+  cloud:
+    gateway:
+      # [SADELEŞTİRME 1]: TokenRelay'i buraya aldık. Artık tüm rotalar için geçerli.
+      default-filters:
+        - TokenRelay
+
+      routes:
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            # TokenRelay'i buradan sildik (yukarıdan alıyor)
+            - name: CircuitBreaker
+              args:
+                name: productCircuitBreaker
+                fallbackUri: forward:/fallback/product
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userCircuitBreaker
+                fallbackUri: forward:/fallback/user
+
+# --- 3. EUREKA ---
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+# --- 4. RESILIENCE4J (SİGORTA) AYARLARI ---
+resilience4j:
+  circuitbreaker:
+    # [SADELEŞTİRME 2]: Kuralları tek bir yerde (default) tanımladık.
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 5
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+
+    # Instance'lara sadece "default ayarı kullan" diyoruz.
+    instances:
+      productCircuitBreaker:
+        baseConfig: default
+      userCircuitBreaker:
+        baseConfig: default

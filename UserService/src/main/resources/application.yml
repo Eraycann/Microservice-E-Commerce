@@ -1,0 +1,26 @@
+server:
+  port: 8081 # User Service Portu
+
+spring:
+  application:
+    name: user-service
+
+  # --- MONGODB AYARLARI ---
+  data:
+    mongodb:
+      # Eğer kullanıcı adı/şifre varsa, URI kullanın:
+      uri: mongodb://admin:admin@localhost:27017/ecommerce-user-db
+
+  # --- GÜVENLİK (Resource Server) ---
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Token'ın gerçek olup olmadığını Keycloak'tan sorgular (Offline Validation)
+          issuer-uri: http://localhost:8180/realms/ecommerce-realm
+          jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

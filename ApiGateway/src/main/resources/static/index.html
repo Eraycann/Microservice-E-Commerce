@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>E-Ticaret Login & Logout</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .btn { padding: 10px 20px; margin: 5px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+        .btn-danger { background-color: #dc3545; }
+        .container { max-width: 800px; margin: 0 auto; }
+        #result { margin-top: 20px; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; min-height: 50px; white-space: pre-wrap; }
+        .status-box { background: #e9ecef; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🛍️ Güvenli E-Ticaret Paneli</h1>
+
+    <div class="status-box">
+        <p><strong>Test Senaryosu:</strong></p>
+        <ol>
+            <li>Giriş yapın.</li>
+            <li>Veri getirmeyi deneyin.</li>
+            <li><strong>Refresh Testi:</strong> Keycloak'ta token süresini 1 dk yaptıysanız, 1 dk bekleyin ve tekrar veri getirin. Hata almazsanız Gateway arkada token'ı yenilemiş demektir.</li>
+            <li>Çıkış yapın ve tekrar girmeyi deneyin (Şifre sormalı).</li>
+        </ol>
+    </div>
+
+    <div id="auth-section">
+        <button class="btn" onclick="login()">🔑 Keycloak ile Giriş Yap</button>
+        <button class="btn btn-danger" onclick="logout()">🚪 Çıkış Yap (Global Logout)</button>
+    </div>
+
+    <hr>
+    <h3>Mikroservis İşlemleri</h3>
+    <button class="btn" onclick="getData('/api/products/all')">📦 Ürünleri Getir (Public)</button>
+    <button class="btn" onclick="getData('/api/products/admin-only')">🔒 Admin Ürünleri (Superuser)</button>
+
+    <h3>Sonuç:</h3>
+    <div id="result">Henüz işlem yapılmadı...</div>
+</div>
+
+<script>
+    // --- AYARLAR ---
+    const GATEWAY_URL = "http://localhost:8080";
+
+    // 1. LOGIN
+    function login() {
+        window.location.href = GATEWAY_URL + "/oauth2/authorization/keycloak";
+    }
+
+    // 2. LOGOUT (KESİN ÇÖZÜM - FORM YÖNTEMİ)
+    function logout() {
+        const csrfToken = getCsrfToken();
+
+        if (!csrfToken) {
+            alert("Hata: CSRF Token bulunamadı! Sayfayı yenileyip tekrar deneyin.");
+            return;
+        }
+
+        // Görünmez bir form oluşturuyoruz
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'http://localhost:8080/logout'; // Gateway adresi
+
+        // CSRF Token'ı formun içine gizli input olarak ekliyoruz
+        // Spring Security hem Header'a hem de '_csrf' parametresine bakar.
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = '_csrf';
+        hiddenField.value = csrfToken;
+
+        form.appendChild(hiddenField);
+        document.body.appendChild(form);
+
+        // Formu gönderiyoruz. Bu işlem sayfayı yeniler ve yönlendirmeleri takip eder.
+        form.submit();
+    }
+
+    // 3. CSRF TOKEN OKUYUCU (GÜNCELLENMİŞ VERSİYON)
+    function getCsrfToken() {
+        // Regex ile XSRF-TOKEN değerini güvenle çeker
+        const match = document.cookie.match(new RegExp('(^| )XSRF-TOKEN=([^;]+)'));
+        if (match) {
+            console.log("Token Bulundu:", match[2]); // Konsoldan kontrol et
+            return match[2];
+        }
+        console.error("HATA: CSRF Token Cookie'de bulunamadı! Backend filtreyi ekledin mi?");
+        return null;
+    }
+
+    // 4. VERİ ÇEKME
+    async function getData(endpoint) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerText = "İstek atılıyor...";
+        resultDiv.style.backgroundColor = "#fff3cd"; // Sarı (Yükleniyor)
+
+        const csrfToken = getCsrfToken();
+
+        try {
+            const response = await fetch(GATEWAY_URL + endpoint, {
+                method: 'GET',
+                headers: {
+                    'X-XSRF-TOKEN': csrfToken // Header'a ekliyoruz
+                }
+            });
+
+            if (response.status === 401) {
+                resultDiv.innerText = "⚠️ Oturum Yok! Lütfen giriş yapın.";
+                resultDiv.style.backgroundColor = "#f8d7da"; // Kırmızı
+            } else if (response.status === 403) {
+                resultDiv.innerText = "⛔ Yetkisiz Erişim! Bu veriyi görmeye rolünüz yetmiyor.";
+                resultDiv.style.backgroundColor = "#f8d7da";
+            } else {
+                const text = await response.text();
+                resultDiv.innerText = "✅ BAŞARILI:\n" + text;
+                resultDiv.style.backgroundColor = "#d4edda"; // Yeşil
+            }
+        } catch (error) {
+            console.error(error);
+            resultDiv.innerText = "❌ Bağlantı Hatası! Gateway kapalı olabilir.";
+            resultDiv.style.backgroundColor = "#f8d7da";
+        }
+    }
+</script>
+</body>
+</html>
