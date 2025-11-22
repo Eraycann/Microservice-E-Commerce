@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "users")
-public class UserProfile {
+public class UserProfile extends BaseEntity{
 
     @Id
     private String id; // MongoDB'nin kendi ID'si (ObjectId)
