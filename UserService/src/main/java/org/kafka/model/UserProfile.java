@@ -32,4 +32,5 @@ public class UserProfile extends BaseEntity{
     // İlişkisel DB olsa ayrı tablo yapardık, burada gömüyoruz (Embedding)
     private List<Address> addresses;
 
+    private boolean active = true;
 }

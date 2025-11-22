@@ -27,6 +27,12 @@ public class UserController {
         return userService.updateProfile(jwt.getClaimAsString("sub"), profileData);
     }
 
+    @DeleteMapping("/me")
+    public void deleteMyProfile(@AuthenticationPrincipal Jwt jwt) {
+        String keycloakId = jwt.getClaimAsString("sub");
+        userService.deleteUser(keycloakId);
+    }
+
     // Sadece Test İçin (Admin Görebilsin)
     @GetMapping("/{keycloakId}")
     @PreAuthorize("hasRole('superuser')") // Rol kontrolünü şimdilik kapalı tutabilirsin test için

@@ -28,3 +28,12 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+
+
+# KEYCLOAK ADMIN CLIENT AYARLARI
+# User Service'in Keycloak API'si ile konuşabilmesi için gerekli
+keycloak:
+  admin:
+    client-id: user-service-client       # Oluşturduğun Client ID
+    client-secret: uRN5hXdF8ET3uO1jAom529UzANZLPMEt # Credentials sekmesinden aldığın kod
