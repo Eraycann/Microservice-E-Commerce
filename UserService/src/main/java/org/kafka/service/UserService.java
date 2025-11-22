@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -98,5 +100,30 @@ public class UserService {
             System.err.println("Keycloak disable işlemi başarısız: " + e.getMessage());
             // throw new RuntimeException("Keycloak hatası", e);
         }
+    }
+
+    // FAVORİ EKLEME
+    public void addFavoriteProduct(String keycloakId, String productId) {
+        UserProfile user = getUserByKeycloakId(keycloakId);
+
+        // Set olduğu için aynı ID varsa eklemez, yoksa ekler.
+        user.getFavoriteProductIds().add(productId);
+
+        userRepository.save(user);
+    }
+
+    // FAVORİ ÇIKARMA
+    public void removeFavoriteProduct(String keycloakId, String productId) {
+        UserProfile user = getUserByKeycloakId(keycloakId);
+
+        user.getFavoriteProductIds().remove(productId);
+
+        userRepository.save(user);
+    }
+
+    // FAVORİ LİSTESİ DÖNME
+    public Set<String> getFavoriteProducts(String keycloakId) {
+        UserProfile user = getUserByKeycloakId(keycloakId);
+        return user.getFavoriteProductIds();
     }
 }

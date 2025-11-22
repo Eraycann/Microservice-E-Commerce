@@ -8,6 +8,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -38,5 +40,23 @@ public class UserController {
     @PreAuthorize("hasRole('superuser')") // Rol kontrolünü şimdilik kapalı tutabilirsin test için
     public UserProfile getUserById(@PathVariable String keycloakId) {
         return userService.getUserByKeycloakId(keycloakId);
+    }
+
+    // FAVORİ EKLE: POST /api/users/favorites/{productId}
+    @PostMapping("/favorites/{productId}")
+    public void addFavorite(@AuthenticationPrincipal Jwt jwt, @PathVariable String productId) {
+        userService.addFavoriteProduct(jwt.getClaimAsString("sub"), productId);
+    }
+
+    // FAVORİ SİL: DELETE /api/users/favorites/{productId}
+    @DeleteMapping("/favorites/{productId}")
+    public void removeFavorite(@AuthenticationPrincipal Jwt jwt, @PathVariable String productId) {
+        userService.removeFavoriteProduct(jwt.getClaimAsString("sub"), productId);
+    }
+
+    // SADECE FAVORİLERİ GETİR: GET /api/users/favorites
+    @GetMapping("/favorites")
+    public Set<String> getFavorites(@AuthenticationPrincipal Jwt jwt) {
+        return userService.getFavoriteProducts(jwt.getClaimAsString("sub"));
     }
 }
