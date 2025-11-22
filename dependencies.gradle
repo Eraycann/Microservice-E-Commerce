@@ -8,7 +8,8 @@ ext {
             springCloudCircuitBreaker: '3.1.0',
             postgreSQL               : '42.7.5',
             lombok                   : '1.18.36',
-            swagger                  : '2.8.3'
+            swagger                  : '2.8.3',
+            keycloakAdminClient      : '25.0.1' // Keycloak Admin Client Versiyonu
     ]
 
     // ==============================================================
@@ -62,6 +63,7 @@ ext {
             springSecurityConfig            : "org.springframework.boot:spring-boot-starter-security:${versions.springBoot}",
             springSecurityOAuth2ResourceServer: "org.springframework.boot:spring-boot-starter-oauth2-resource-server:${versions.springBoot}",
             springSecurityOAuth2Client      : "org.springframework.boot:spring-boot-starter-oauth2-client:${versions.springBoot}",
+            keycloakAdminClient             : "org.keycloak:keycloak-admin-client:${versions.keycloakAdminClient}", // Keycloak Admin Client Tanımı
 
             // ----------------------------------------------------------
             // G. SİSTEM DİRENCİ (RESILIENCE4J)
