@@ -9,6 +9,7 @@ ext {
             postgreSQL               : '42.7.5',
             lombok                   : '1.18.36',
             swagger                  : '2.8.3',
+            mapStruct                 : "1.5.5.Final",
             keycloakAdminClient      : '25.0.1' // Keycloak Admin Client Versiyonu
     ]
 
@@ -74,6 +75,8 @@ ext {
             // ----------------------------------------------------------
             // H. GELİŞTİRİCİ ARAÇLARI (UTILS)
             // ----------------------------------------------------------
-            lombok                          : "org.projectlombok:lombok:${versions.lombok}"
+            lombok                          : "org.projectlombok:lombok:${versions.lombok}",
+            mapStruct                       : "org.mapstruct:mapstruct:$versions.mapStruct",
+            mapStructProcessor              : "org.mapstruct:mapstruct-processor:$versions.mapStruct"
     ]
 }

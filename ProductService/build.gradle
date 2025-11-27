@@ -3,8 +3,10 @@ dependencies {
     implementation libs.springBootDataJpa
     implementation libs.postgreSQL
     implementation libs.springCloudEurekaClient
-    implementation libs.springSecurityOAuth2ResourceServer // JWT doğrulaması için
+    implementation libs.springSecurityOAuth2ResourceServer
     implementation libs.springSecurityConfig
+    implementation libs.mapStruct
+    implementation libs.mapStructProcessor
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 }
