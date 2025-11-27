@@ -3,6 +3,7 @@ package org.kafka.controller;
 import lombok.RequiredArgsConstructor;
 import org.kafka.model.Address;
 import org.kafka.model.UserProfile;
+import org.kafka.service.UserActivityService;
 import org.kafka.service.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +19,7 @@ import java.util.Set;
 public class UserController {
 
     private final UserService userService;
+    private final UserActivityService userActivityService;
 
     // --- TEMEL PROFİL ---
 
@@ -80,5 +82,26 @@ public class UserController {
     @PreAuthorize("hasRole('superuser')")
     public UserProfile getUserById(@PathVariable String keycloakId) {
         return userService.getUserByKeycloakId(keycloakId);
+    }
+
+
+    // --- SON GEZİLENLER (REDIS) ---
+
+    // Ürün Detayına girince çağrılır
+    @PostMapping("/history/{productId}")
+    public void addHistory(@AuthenticationPrincipal Jwt jwt, @PathVariable String productId) {
+        userActivityService.addProductToHistory(jwt.getClaimAsString("sub"), productId);
+    }
+
+    // Geçmiş listesini döner
+    @GetMapping("/history")
+    public List<String> getHistory(@AuthenticationPrincipal Jwt jwt) {
+        return userActivityService.getUserHistory(jwt.getClaimAsString("sub"));
+    }
+
+    // Geçmişi temizle
+    @DeleteMapping("/history")
+    public void clearHistory(@AuthenticationPrincipal Jwt jwt) {
+        userActivityService.clearHistory(jwt.getClaimAsString("sub"));
     }
 }
