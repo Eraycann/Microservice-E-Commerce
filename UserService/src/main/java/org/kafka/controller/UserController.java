@@ -2,6 +2,7 @@ package org.kafka.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.kafka.model.Address;
+import org.kafka.model.NotificationSettings;
 import org.kafka.model.UserProfile;
 import org.kafka.service.UserActivityService;
 import org.kafka.service.UserService;
@@ -103,5 +104,14 @@ public class UserController {
     @DeleteMapping("/history")
     public void clearHistory(@AuthenticationPrincipal Jwt jwt) {
         userActivityService.clearHistory(jwt.getClaimAsString("sub"));
+    }
+
+    // --- BİLDİRİM AYARLARI ---
+    @PatchMapping("/me/notifications")
+    public UserProfile updateNotificationSettings(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody NotificationSettings settings) {
+
+        return userService.updateNotificationSettings(jwt.getClaimAsString("sub"), settings);
     }
 }

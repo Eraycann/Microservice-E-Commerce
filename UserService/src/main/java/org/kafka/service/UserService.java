@@ -2,6 +2,7 @@ package org.kafka.service;
 
 import lombok.RequiredArgsConstructor;
 import org.kafka.model.Address;
+import org.kafka.model.NotificationSettings;
 import org.kafka.model.UserProfile;
 import org.kafka.repository.UserRepository;
 import org.keycloak.admin.client.Keycloak;
@@ -258,5 +259,30 @@ public class UserService {
 
         return userRepository.findByKeycloakId(keycloakId)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı: " + keycloakId));
+    }
+
+    // =================================================================================
+    // 6. İLETİŞİM TERCİHLERİ (NOTIFICATION PREFERENCES) - YENİ
+    // =================================================================================
+
+    /**
+     * Kullanıcının iletişim tercihlerini günceller.
+     * Kullanım: PATCH /api/users/me/notifications
+     */
+    @CacheEvict(value = "user_profile", key = "#keycloakId")
+    public UserProfile updateNotificationSettings(String keycloakId, NotificationSettings newSettings) {
+        UserProfile user = getUserByKeycloakId(keycloakId);
+
+        // Eğer null geldiyse başlat (Migration sorunu yaşamamak için)
+        if (user.getNotificationSettings() == null) {
+            user.setNotificationSettings(new org.kafka.model.NotificationSettings());
+        }
+
+        // Ayarları güncelle
+        user.getNotificationSettings().setEmailEnabled(newSettings.isEmailEnabled());
+        user.getNotificationSettings().setSmsEnabled(newSettings.isSmsEnabled());
+        user.getNotificationSettings().setPushEnabled(newSettings.isPushEnabled());
+
+        return userRepository.save(user);
     }
 }

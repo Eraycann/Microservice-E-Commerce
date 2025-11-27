@@ -38,4 +38,8 @@ public class UserProfile extends BaseEntity {
 
     @Builder.Default
     private Set<String> favoriteProductIds = new HashSet<>();
+
+    // --- YENİ EKLENEN KISIM ---
+    @Builder.Default
+    private NotificationSettings notificationSettings = new NotificationSettings();
 }
