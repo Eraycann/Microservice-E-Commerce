@@ -28,22 +28,22 @@ spring:
   # --- 2. GATEWAY ROUTING ---
   cloud:
     gateway:
-      # [SADELEŞTİRME 1]: TokenRelay'i buraya aldık. Artık tüm rotalar için geçerli.
       default-filters:
         - TokenRelay
 
       routes:
+        # --- PRODUCT SERVICE ---
         - id: product-service
           uri: lb://product-service
           predicates:
             - Path=/api/products/**
           filters:
-            # TokenRelay'i buradan sildik (yukarıdan alıyor)
             - name: CircuitBreaker
               args:
                 name: productCircuitBreaker
                 fallbackUri: forward:/fallback/product
 
+        # --- USER SERVICE ---
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -54,6 +54,17 @@ spring:
                 name: userCircuitBreaker
                 fallbackUri: forward:/fallback/user
 
+        # --- RECOMMENDATION SERVICE (YENİ) ---
+        - id: recommendation-service
+          uri: lb://recommendation-service
+          predicates:
+            - Path=/api/recommendations/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: recommendationCircuitBreaker
+                fallbackUri: forward:/fallback/recommendation
+
 # --- 3. EUREKA ---
 eureka:
   client:
@@ -63,7 +74,6 @@ eureka:
 # --- 4. RESILIENCE4J (SİGORTA) AYARLARI ---
 resilience4j:
   circuitbreaker:
-    # [SADELEŞTİRME 2]: Kuralları tek bir yerde (default) tanımladık.
     configs:
       default:
         registerHealthIndicator: true
@@ -75,9 +85,11 @@ resilience4j:
         failureRateThreshold: 50
         eventConsumerBufferSize: 10
 
-    # Instance'lara sadece "default ayarı kullan" diyoruz.
     instances:
       productCircuitBreaker:
         baseConfig: default
       userCircuitBreaker:
+        baseConfig: default
+      # Yeni eklenen instance:
+      recommendationCircuitBreaker:
         baseConfig: default
