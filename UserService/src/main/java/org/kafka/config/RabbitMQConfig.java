@@ -11,25 +11,32 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    // Exchange Adı: Bu isimle mesaj yayınlayacağız.
+    // 1. User Oluşum Olayları (Mevcut)
     public static final String USER_EXCHANGE = "user.exchange";
-
-    // Routing Key: Mesajın rotası (Notification servisi buna göre dinleyecek)
     public static final String ROUTING_KEY_USER_CREATED = "user.created";
 
-    // 1. Exchange Tanımı (Topic Exchange en esneğidir)
+    // 2. User Aktivite Olayları (YENİ - Recommendation İçin)
+    // Farklı servislerden (Cart, Order) de buraya mesaj akacak.
+    public static final String ACTIVITY_EXCHANGE = "user.activity.exchange";
+    public static final String ROUTING_KEY_VIEW = "interaction.view";
+
+    // Exchange Tanımları
     @Bean
     public TopicExchange userExchange() {
         return new TopicExchange(USER_EXCHANGE);
     }
 
-    // 2. JSON Converter (Mesajlar kuyruğa JSON olarak gitsin)
+    @Bean
+    public TopicExchange activityExchange() {
+        return new TopicExchange(ACTIVITY_EXCHANGE);
+    }
+
+    // JSON Converter (Aynen Kalıyor)
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
-    // 3. RabbitTemplate'e JSON Converter'ı Tanıtma
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
