@@ -1,4 +1,4 @@
-package org.kafka.service;
+package org.kafka.service.client;
 
 import org.kafka.service.ProductService; // Gerçek ProductService'e delegasyon yapar
 import org.springframework.stereotype.Component;

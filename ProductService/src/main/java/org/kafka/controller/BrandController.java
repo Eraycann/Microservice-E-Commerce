@@ -20,7 +20,6 @@ public class BrandController {
 
     private final BrandService brandService;
 
-    // ADMIN: Yeni Marka Oluşturma
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BrandResponseDto> createBrand(@Valid @RequestBody BrandRequestDto request) {
@@ -37,19 +36,16 @@ public class BrandController {
         return ResponseEntity.ok(response);
     }
 
-    // PUBLIC/USER: Tüm Markaları Listeleme (Okuma izni tüm kullanıcılara açıktır)
     @GetMapping
     public ResponseEntity<List<BrandResponseDto>> getAllBrands() {
         return ResponseEntity.ok(brandService.getAllBrands());
     }
 
-    // PUBLIC/USER: ID ile Marka Getirme (Okuma izni tüm kullanıcılara açıktır)
     @GetMapping("/{id}")
     public ResponseEntity<BrandResponseDto> getBrandById(@PathVariable Long id) {
         return ResponseEntity.ok(brandService.getBrandById(id));
     }
 
-    // ADMIN: Marka Silme
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteBrand(@PathVariable Long id) {

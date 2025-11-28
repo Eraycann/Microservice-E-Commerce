@@ -4,13 +4,23 @@ server:
 spring:
   application:
     name: product-service
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/productdb
     username: postgres
     password: postgres
+
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+    show-sql: true
+
 
   security:
     oauth2:
@@ -19,6 +29,22 @@ spring:
           # Token'ın imzasını kontrol etmek için Keycloak adresi
           issuer-uri: http://localhost:8180/realms/ecommerce-realm
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
+
+
+aws:
+  s3:
+    # AWS IAM kullanıcınızın Erişim Anahtarı (Production'da Secrets Manager kullanılmalı)
+    access-key: YOUR_AWS_ACCESS_KEY_ID_HERE
+
+    # AWS IAM kullanıcınızın Gizli Anahtarı (Production'da asla doğrudan yazılmamalı)
+    secret-key: YOUR_AWS_SECRET_ACCESS_KEY_HERE
+
+    # S3 Bucket'ın bulunduğu bölge (Örn: us-east-1, eu-central-1)
+    region: eu-central-1
+
+    # Kullanılacak S3 Bucket'ın adı
+    bucket-name: my-ecommerce-product-images-bucket-dev
+
 
 eureka:
   client:

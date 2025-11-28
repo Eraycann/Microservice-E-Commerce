@@ -23,7 +23,7 @@ public class ProductInventoryService {
 
     private final ProductRepository productRepository;
     private final ProductInventoryRepository inventoryRepository;
-    private final ProductMapper productMapper; // Güncel Product detayını döndürmek için
+    private final ProductMapper productMapper;
 
     /**
      * Belirtilen ürüne ait stoğu verilen delta kadar günceller.

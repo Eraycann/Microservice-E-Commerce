@@ -1,4 +1,4 @@
-package org.kafka.service;
+package org.kafka.service.helper;
 
 import org.kafka.exception.base.BaseDomainException;
 import org.kafka.exception.base.BaseErrorCode;

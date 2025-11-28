@@ -14,7 +14,6 @@ public class ProductInventory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Tek Yönlü İlişki: Inventory -> Product. Bu ilişkiyi Product'tan gelen 'mappedBy' yönetir.
     @OneToOne
     @JoinColumn(name = "product_id", referencedColumnName = "id", nullable = false, unique = true)
     private Product product;

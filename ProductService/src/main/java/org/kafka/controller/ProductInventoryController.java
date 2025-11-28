@@ -17,9 +17,8 @@ public class ProductInventoryController {
 
     private final ProductInventoryService inventoryService;
 
-    // ADMIN: Stok Güncelleme endpoint'i. Sadece yetkili kullanıcılar (örn: DEPOCU, ADMIN) yapabilir.
     @PutMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'INVENTORY_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ProductDetailResponseDto> updateProductStock(
             @PathVariable Long productId,
             @Valid @RequestBody StockUpdateRequestDto request) {

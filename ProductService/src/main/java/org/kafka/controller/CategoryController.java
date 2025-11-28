@@ -20,7 +20,6 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    // ADMIN: Yeni Kategori Oluşturma
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponseDto> createCategory(@Valid @RequestBody CategoryRequestDto request) {
@@ -28,7 +27,6 @@ public class CategoryController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // ADMIN: Kategori Güncelleme
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryResponseDto> updateCategory(@PathVariable Long id,
@@ -37,19 +35,16 @@ public class CategoryController {
         return ResponseEntity.ok(response);
     }
 
-    // PUBLIC/USER: Tüm Kategorileri Listeleme (Okuma izni tüm kullanıcılara açıktır)
     @GetMapping
     public ResponseEntity<List<CategoryResponseDto>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
-    // PUBLIC/USER: ID ile Kategori Getirme (Okuma izni tüm kullanıcılara açıktır)
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponseDto> getCategoryById(@PathVariable Long id) {
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
-    // ADMIN: Kategori Silme
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {

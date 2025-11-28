@@ -8,6 +8,8 @@ import org.kafka.mapper.MasterDataMapper;
 import org.kafka.model.Category;
 import org.kafka.repository.CategoryRepository;
 
+import org.kafka.service.client.ProductQueryClient;
+import org.kafka.service.helper.DomainHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,21 +24,19 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final MasterDataMapper masterDataMapper;
     private final DomainHelper helper;
-    private final ProductQueryClient productQueryClient; // Silme kontrolü için
+    private final ProductQueryClient productQueryClient;
 
     @Transactional
     public CategoryResponseDto createCategory(CategoryRequestDto request) {
-        // 1. Slug Oluşturma ve Benzersizlik Kontrolü
         String slug = helper.generateSlug(request.getName());
         if (categoryRepository.existsBySlug(slug)) {
             throw new BaseDomainException(ProductErrorCode.CATEGORY_SLUG_ALREADY_EXISTS);
         }
 
-        // 2. Mapping ve Temel Entity Oluşturma
         Category category = masterDataMapper.toCategoryEntity(request);
         category.setSlug(slug);
 
-        // 3. İlişki Kurulumu (Parent)
+        // İlişki Kurulumu (Parent)
         if (request.getParentId() != null) {
             Category parent = categoryRepository.findById(request.getParentId())
                     .orElseThrow(() -> new BaseDomainException(ProductErrorCode.PARENT_CATEGORY_NOT_FOUND));
@@ -52,7 +52,6 @@ public class CategoryService {
         Category existingCategory = categoryRepository.findById(id)
                 .orElseThrow(() -> new BaseDomainException(ProductErrorCode.CATEGORY_NOT_FOUND));
 
-        // 1. Slug Kontrolü (İsim değiştiyse yeni slug kontrol edilir)
         String newSlug = helper.generateSlug(request.getName());
         if (!existingCategory.getName().equals(request.getName())) {
             if (categoryRepository.findBySlug(newSlug).isPresent() &&
@@ -62,10 +61,9 @@ public class CategoryService {
             existingCategory.setSlug(newSlug);
         }
 
-        // 2. Mapping ve Temel Güncelleme
         masterDataMapper.updateCategoryEntity(existingCategory, request);
 
-        // 3. İlişki Kurulumu (Parent)
+        //İlişki Kurulumu (Parent)
         if (request.getParentId() != null) {
             if (request.getParentId().equals(id)) {
                 throw new BaseDomainException(ProductErrorCode.CATEGORY_CANNOT_BE_ITS_OWN_PARENT);

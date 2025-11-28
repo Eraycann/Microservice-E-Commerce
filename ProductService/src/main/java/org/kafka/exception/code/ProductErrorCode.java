@@ -37,6 +37,12 @@ public enum ProductErrorCode implements BaseErrorCode {
     SPEC_DATA_INVALID_FORMAT("PROD-1013", "Teknik özellik verisi (JSONB) geçersiz formattadır.", HttpStatus.BAD_REQUEST),
     SPECS_NOT_FOUND("PROD-1017", "Ürüne ait teknik özellikler bulunamadı.", HttpStatus.NOT_FOUND),
 
+    // --- Resim (Image) Hataları ---
+    INVALID_IMAGE_FILE("PROD-1018", "Geçersiz resim dosyası.", HttpStatus.BAD_REQUEST),
+    IMAGE_NOT_FOUND("PROD-1019", "Ürün resmi bulunamadı.", HttpStatus.NOT_FOUND),
+    NO_MAIN_IMAGE_SPECIFIED("PROD-1020", "Ana resim belirtilmedi.", HttpStatus.BAD_REQUEST),
+    FILE_UPLOAD_FAILED("PROD-1021", "Dosya yükleme işlemi başarısız oldu.", HttpStatus.INTERNAL_SERVER_ERROR),
+
     // --- Genel Hatalar (5xx) ---
 
     INTERNAL_SERVER_ERROR("PROD-9999", "Ürün servisinde bilinmeyen dahili bir hata oluştu.", HttpStatus.INTERNAL_SERVER_ERROR);

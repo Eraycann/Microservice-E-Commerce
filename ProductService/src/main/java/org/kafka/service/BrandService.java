@@ -8,6 +8,8 @@ import org.kafka.mapper.MasterDataMapper;
 import org.kafka.model.Brand;
 import org.kafka.repository.BrandRepository;
 
+import org.kafka.service.client.ProductQueryClient;
+import org.kafka.service.helper.DomainHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,17 +24,15 @@ public class BrandService {
     private final BrandRepository brandRepository;
     private final MasterDataMapper masterDataMapper;
     private final DomainHelper helper;
-    private final ProductQueryClient productQueryClient; // Silme kontrolü için
+    private final ProductQueryClient productQueryClient;
 
     @Transactional
     public BrandResponseDto createBrand(BrandRequestDto request) {
-        // 1. Slug Oluşturma ve Benzersizlik Kontrolü
         String slug = helper.generateSlug(request.getName());
         if (brandRepository.existsBySlug(slug)) {
             throw new BaseDomainException(ProductErrorCode.BRAND_SLUG_ALREADY_EXISTS);
         }
 
-        // 2. Mapping ve Temel Entity Oluşturma
         Brand brand = masterDataMapper.toBrandEntity(request);
         brand.setSlug(slug);
 
@@ -45,7 +45,6 @@ public class BrandService {
         Brand existingBrand = brandRepository.findById(id)
                 .orElseThrow(() -> new BaseDomainException(ProductErrorCode.BRAND_NOT_FOUND));
 
-        // 1. Slug Kontrolü (İsim değiştiyse yeni slug kontrol edilir)
         String newSlug = helper.generateSlug(request.getName());
         if (!existingBrand.getName().equals(request.getName())) {
             if (brandRepository.findBySlug(newSlug).isPresent() &&
@@ -55,7 +54,6 @@ public class BrandService {
             existingBrand.setSlug(newSlug);
         }
 
-        // 2. Mapping ve Temel Güncelleme
         masterDataMapper.updateBrandEntity(existingBrand, request);
 
         return masterDataMapper.toBrandResponse(brandRepository.save(existingBrand));
