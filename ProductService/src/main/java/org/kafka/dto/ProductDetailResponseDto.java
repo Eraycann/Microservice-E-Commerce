@@ -3,8 +3,8 @@ package org.kafka.dto;
 
 import lombok.Getter;
 import lombok.Setter;
-
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,13 +15,12 @@ public class ProductDetailResponseDto {
     private String description;
     private BigDecimal price;
 
-    // İlişkili Alanlar (Mapper'da Category/Brand Entity'lerinden isimler çekilir)
     private String categoryName;
     private String brandName;
-
-    // ProductInventory Verisi (ProductInventory Entity'sinden çekilir)
     private Integer stockCount;
-
-    // ProductSpec Verisi (ProductSpec Entity'sinden çekilir)
     private String specsData;
+
+    // --- DEĞİŞİKLİK ---
+    // Artık sadece String listesi değil, detaylı resim objesi listesi dönüyoruz.
+    private List<ProductImageResponseDto> images;
 }

@@ -10,6 +10,7 @@ ext {
             lombok                   : '1.18.36',
             swagger                  : '2.8.3',
             mapStruct                 : "1.5.5.Final",
+            awsSdkS3                 : '2.25.1',
             keycloakAdminClient      : '25.0.1' // Keycloak Admin Client Versiyonu
     ]
 
@@ -77,6 +78,13 @@ ext {
             // ----------------------------------------------------------
             lombok                          : "org.projectlombok:lombok:${versions.lombok}",
             mapStruct                       : "org.mapstruct:mapstruct:$versions.mapStruct",
+            mapStructProcessor              : "org.mapstruct:mapstruct-processor:$versions.mapStruct",
+
+            // ----------------------------------------------------------
+            // I. AWS ÇÖZÜMLERİ
+            // ----------------------------------------------------------
+            // AWS SDK v2 S3 İstemcisi
+            awsSdkS3                 : "software.amazon.awssdk:s3:${versions.awsSdkS3}",
             mapStructProcessor              : "org.mapstruct:mapstruct-processor:$versions.mapStruct",
 
             // I. MESAJLAŞMA (MESSAGING - RABBITMQ)
