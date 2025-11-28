@@ -3,13 +3,13 @@ package org.kafka.service;
 import lombok.RequiredArgsConstructor;
 import org.kafka.config.RabbitMQConfig;
 import org.kafka.event.UserCreatedEvent;
+import org.kafka.event.UserEventPublisher;
 import org.kafka.model.Address;
 import org.kafka.model.NotificationSettings;
 import org.kafka.model.UserProfile;
 import org.kafka.repository.UserRepository;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -26,7 +26,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final Keycloak keycloak;
-    private final RabbitTemplate rabbitTemplate; // 1. RabbitTemplate Inject Edildi
+    private final UserEventPublisher userEventPublisher;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     private String issuerUri;
@@ -94,30 +94,17 @@ public class UserService {
 
         UserProfile savedProfile = userRepository.save(profile);
 
-        // 2. RABBITMQ MESAJ GÖNDERİMİ
-        // Veritabanına başarıyla kaydolduktan sonra eventi fırlatıyoruz.
-        try {
-            UserCreatedEvent event = new UserCreatedEvent(
-                    savedProfile.getKeycloakId(),
-                    savedProfile.getEmail(),
-                    savedProfile.getFirstName(),
-                    savedProfile.getLastName(),
-                    savedProfile.getUsername()
-            );
+        // --- YENİ YAPI: PUBLISHER KULLANIMI ---
+        // Kod karmaşası gitti, tek satırda iş bitti.
+        UserCreatedEvent event = new UserCreatedEvent(
+                savedProfile.getKeycloakId(),
+                savedProfile.getEmail(),
+                savedProfile.getFirstName(),
+                savedProfile.getLastName(),
+                savedProfile.getUsername()
+        );
 
-            // Exchange Adı, Routing Key, Mesaj Objesi
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.USER_EXCHANGE,
-                    RabbitMQConfig.ROUTING_KEY_USER_CREATED,
-                    event
-            );
-
-            System.out.println("🐇 RabbitMQ Olayı Fırlatıldı: " + event.email());
-
-        } catch (Exception e) {
-            // Mesaj gitmezse user oluşumunu durdurmayalım, sadece loglayalım.
-            System.err.println("RabbitMQ Hatası: " + e.getMessage());
-        }
+        userEventPublisher.publishUserCreatedEvent(event);
 
         return savedProfile;
     }
