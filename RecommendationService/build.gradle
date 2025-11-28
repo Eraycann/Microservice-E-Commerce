@@ -1,12 +1,16 @@
 dependencies {
     implementation libs.springBootStarterWeb
     implementation libs.springBootDataMongo
-    implementation libs.springBootStarterAmqp     // RabbitMQ
+    implementation libs.springBootStarterAmqp
     implementation libs.springCloudEurekaClient
 
+    // --- FEIGN CLIENT (YENİ) ---
+    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    implementation libs.springCloudStarterOpenFeign
+
     // --- GÜVENLİK (SECURITY) ---
-    implementation libs.springSecurityOAuth2ResourceServer // JWT Doğrulama (Şart)
-    implementation libs.springSecurityConfig             // Core Security
+    implementation libs.springSecurityOAuth2ResourceServer
+    implementation libs.springSecurityConfig
 
     // Boilerplate
     compileOnly libs.lombok
