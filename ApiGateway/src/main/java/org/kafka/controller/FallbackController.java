@@ -18,4 +18,12 @@ public class FallbackController {
     public Mono<String> userServiceFallback() {
         return Mono.just("⚠️ Kullanıcı Servisi bakımda veya aşırı yoğun. (Circuit Breaker Activated)");
     }
+
+    // --- YENİ EKLENEN FALLBACK ---
+    @GetMapping("/recommendation")
+    public Mono<String> recommendationServiceFallback() {
+        // Öneri sistemi kritik bir servis değildir (Non-Critical).
+        // Çökmesi durumunda ana sayfa çalışmaya devam etmelidir.
+        return Mono.just("⚠️ Kişisel öneriler şu an hazırlanamıyor. Popüler ürünlere göz atabilirsiniz.");
+    }
 }
