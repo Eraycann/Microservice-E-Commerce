@@ -6,6 +6,7 @@ dependencies {
     implementation libs.springSecurityOAuth2ResourceServer // Token doğrulamak için şart
     implementation libs.springSecurityConfig
     implementation libs.keycloakAdminClient // Keycloak Admin API'si ile iletişim için eklendi
+    implementation libs.springBootStarterAmqp // RabbitMQ
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 }
