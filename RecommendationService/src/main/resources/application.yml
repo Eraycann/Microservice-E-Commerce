@@ -1,0 +1,41 @@
+server:
+  port: 8083 # Recommendation Service Portu
+
+spring:
+  application:
+    name: recommendation-service
+
+  # --- MONGODB AYARLARI ---
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: ecommerce-recommendation-db
+      username: admin
+      password: admin
+      authentication-database: admin
+
+  # --- RABBITMQ AYARLARI ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        default-requeue-rejected: false
+
+  # --- GÜVENLİK (Resource Server) ---
+  # Burası User Service ile aynıdır.
+  # Çünkü aynı Keycloak sunucusuna sorup "Bu imza senin mi?" diyecek.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/ecommerce-realm
+          jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
