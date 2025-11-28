@@ -1,0 +1,16 @@
+dependencies {
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootDataMongo
+    implementation libs.springBootStarterAmqp     // RabbitMQ
+    implementation libs.springCloudEurekaClient
+
+    // --- GÜVENLİK (SECURITY) ---
+    implementation libs.springSecurityOAuth2ResourceServer // JWT Doğrulama (Şart)
+    implementation libs.springSecurityConfig             // Core Security
+
+    // Boilerplate
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    implementation libs.mapStruct
+    annotationProcessor libs.mapStructProcessor
+}
