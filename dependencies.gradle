@@ -84,6 +84,10 @@ ext {
             // I. AWS ÇÖZÜMLERİ
             // ----------------------------------------------------------
             // AWS SDK v2 S3 İstemcisi
-            awsSdkS3                 : "software.amazon.awssdk:s3:${versions.awsSdkS3}"
+            awsSdkS3                 : "software.amazon.awssdk:s3:${versions.awsSdkS3}",
+            mapStructProcessor              : "org.mapstruct:mapstruct-processor:$versions.mapStruct",
+
+            // I. MESAJLAŞMA (MESSAGING - RABBITMQ)
+            springBootStarterAmqp           : "org.springframework.boot:spring-boot-starter-amqp:${versions.springBoot}"
     ]
 }

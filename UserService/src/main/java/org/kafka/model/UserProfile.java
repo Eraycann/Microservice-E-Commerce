@@ -17,28 +17,29 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "users")
-public class UserProfile extends BaseEntity { // BaseEntity'yi önceki adımda eklemiştik
+public class UserProfile extends BaseEntity {
 
     @Id
-    private String id;
+    private String id; // MongoDB ID (Internal)
 
     @Indexed(unique = true)
-    private String keycloakId;
+    private String keycloakId; // Keycloak ID (External Reference)
 
     private String username;
     private String email;
     private String firstName;
     private String lastName;
     private String phoneNumber;
+    private String taxNumber; // Vergi No
 
-    // E-Ticaret Alanları
-    private String taxNumber;
     private List<Address> addresses;
-    private boolean active = true; // Soft delete için
 
-    // --- YENİ EKLENEN KISIM: FAVORİLER ---
-    // Neden Set? Çünkü List kullanırsak kullanıcı yanlışlıkla butona 2 kere basarsa aynı ürünü 2 kere ekler. Set matematikteki küme gibidir, aynı elemandan sadece bir tane tutar (Unique).
-    // Builder kullanırken Set'in null gelmemesi için default değer atıyoruz
+    private boolean active = true; // Soft Delete için
+
     @Builder.Default
     private Set<String> favoriteProductIds = new HashSet<>();
+
+    // --- YENİ EKLENEN KISIM ---
+    @Builder.Default
+    private NotificationSettings notificationSettings = new NotificationSettings();
 }
