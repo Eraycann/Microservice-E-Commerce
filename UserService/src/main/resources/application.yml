@@ -5,6 +5,17 @@ spring:
   application:
     name: user-service
 
+  # --- RABBITMQ AYARLARI (YENİ) ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    # Mesajları JSON olarak göndermek için listener tarafı (Opsiyonel burada producer biziz ama dursun)
+    listener:
+      simple:
+        default-requeue-rejected: false
+
   # --- MONGODB AYARLARI (DÜZELTİLMİŞ) ---
   data:
     mongodb:
@@ -14,6 +25,18 @@ spring:
       username: admin             # Docker'da verdiğin kullanıcı adı
       password: admin             # Docker'da verdiğin şifre
       authentication-database: admin # <--- KRİTİK AYAR BU! (Kullanıcının kayıtlı olduğu yer)
+
+      # --- REDIS AYARLARI (YENİ) ---
+      redis:
+        host: localhost
+        port: 6379
+        # password: (varsa buraya)
+
+  # --- CACHE AYARLARI (SADELEŞMİŞ) ---
+  cache:
+    type: redis
+    # time-to-live ve cache-null-values satırlarını SİL.
+    # Çünkü bunları Java sınıfında (RedisConfig) zaten tanımladık.
 
   # --- GÜVENLİK (Resource Server) ---
   security:
