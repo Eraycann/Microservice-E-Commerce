@@ -21,15 +21,14 @@ public class BrandController {
     private final BrandService brandService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<BrandResponseDto> createBrand(@Valid @RequestBody BrandRequestDto request) {
         BrandResponseDto response = brandService.createBrand(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // ADMIN: Marka Güncelleme
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<BrandResponseDto> updateBrand(@PathVariable Long id,
                                                         @Valid @RequestBody BrandRequestDto request) {
         BrandResponseDto response = brandService.updateBrand(id, request);
@@ -47,7 +46,7 @@ public class BrandController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<Void> deleteBrand(@PathVariable Long id) {
         brandService.deleteBrand(id);
         return ResponseEntity.noContent().build();

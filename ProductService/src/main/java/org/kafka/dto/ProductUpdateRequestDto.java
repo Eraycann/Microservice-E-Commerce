@@ -13,6 +13,4 @@ public class ProductUpdateRequestDto {
     private BigDecimal price;
     private Long categoryId;
     private Long brandId;
-
-    // Slug'ın Servis katmanında isimden yeniden oluşturulacağı varsayılır.
 }

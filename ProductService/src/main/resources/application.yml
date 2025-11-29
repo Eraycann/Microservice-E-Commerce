@@ -33,17 +33,10 @@ spring:
 
 aws:
   s3:
-    # AWS IAM kullanıcınızın Erişim Anahtarı (Production'da Secrets Manager kullanılmalı)
-    access-key: YOUR_AWS_ACCESS_KEY_ID_HERE
-
-    # AWS IAM kullanıcınızın Gizli Anahtarı (Production'da asla doğrudan yazılmamalı)
-    secret-key: YOUR_AWS_SECRET_ACCESS_KEY_HERE
-
-    # S3 Bucket'ın bulunduğu bölge (Örn: us-east-1, eu-central-1)
-    region: eu-central-1
-
-    # Kullanılacak S3 Bucket'ın adı
-    bucket-name: my-ecommerce-product-images-bucket-dev
+    access-key:
+    secret-key:
+    region:
+    bucket-name:
 
 
 eureka:
