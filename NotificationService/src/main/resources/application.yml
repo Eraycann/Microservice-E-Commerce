@@ -33,7 +33,13 @@ spring:
     password: guest
     listener:
       simple:
-        default-requeue-rejected: false # Hata yönetimi (DLQ) için false kalsın
+        default-requeue-rejected: false # Hata alınca sonsuz döngüye girme, DLQ'ya at.
+        retry:
+          enabled: true
+          initial-interval: 2000ms # İlk hata: 2sn bekle
+          max-interval: 10000ms    # Max bekleme: 10sn
+          max-attempts: 3          # Toplam 3 kere dene, olmazsa DLQ'ya postala.
+          multiplier: 2
 
   # --- MAIL (SMTP) AYARLARI ---
   mail:
