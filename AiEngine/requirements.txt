@@ -1,0 +1,9 @@
+pydantic
+fastapi
+uvicorn
+pymongo     # MongoDB bağlantısı için
+pandas      # Veri işleme
+numpy       # Matematiksel işlemler
+scipy       # Seyrek matrisler için
+implicit    # Öneri motoru kütüphanesi (En hızlısıdır)
+python-dotenv
