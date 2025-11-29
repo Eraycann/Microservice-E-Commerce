@@ -33,10 +33,6 @@ public class RecommendationService {
             productIds = repository.findTop10PopularProductIds();
         }
 
-        if (productIds.isEmpty()) {
-            return new ArrayList<>(); // Hiç veri yoksa boş dön
-        }
-
         // ADIM 2: Ürün Detaylarını Getir (Data Enrichment)
         // Product Service'e gidip "Bana bu ID'lerin resmini, fiyatını ver" diyoruz.
         try {
