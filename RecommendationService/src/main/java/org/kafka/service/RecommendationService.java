@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -68,5 +69,20 @@ public class RecommendationService {
             log.error("🔌 AI Engine bağlantı hatası veya kapalı: {}", e.getMessage());
         }
         return new ArrayList<>();
+    }
+
+    // --- YENİ EKLENEN METOT (EĞİTİM TETİKLEME) ---
+    public String triggerManualTraining() {
+        try {
+            log.info("🚀 Manuel model eğitimi tetikleniyor...");
+            Map<String, Object> response = aiEngineClient.trainModel();
+
+            log.info("✅ Python Cevabı: {}", response);
+            return "Eğitim Başlatıldı. Detay: " + response.toString();
+
+        } catch (Exception e) {
+            log.error("❌ Eğitim tetiklenirken hata oluştu: {}", e.getMessage());
+            throw new RuntimeException("AI Servisine ulaşılamadı: " + e.getMessage());
+        }
     }
 }
