@@ -8,6 +8,7 @@ dependencies {
     implementation libs.mapStruct
     implementation libs.swaggerui
     implementation libs.springBootDataRedis
+    implementation libs.springCloudStarterOpenFeign
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     annotationProcessor libs.mapStructProcessor
