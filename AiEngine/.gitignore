@@ -1,0 +1,5 @@
+# Python Ignore
+AiEngine/venv/
+AiEngine/.idea/
+AiEngine/__pycache__/
+*.pyc
