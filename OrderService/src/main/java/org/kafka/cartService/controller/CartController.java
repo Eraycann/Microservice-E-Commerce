@@ -5,6 +5,8 @@ import org.kafka.cartService.dto.CartItemRequestDto;
 import org.kafka.cartService.model.Cart;
 import org.kafka.cartService.service.CartService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,28 +16,26 @@ public class CartController {
 
     private final CartService cartService;
 
-    // TODO: userId normalde JWT token'dan (SecurityContext) alınmalıdır.
-    // Şimdilik path variable olarak alıyoruz.
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<Cart> getCart(@PathVariable String userId) {
-        return ResponseEntity.ok(cartService.getCart(userId));
+    @GetMapping
+    public ResponseEntity<Cart> getCart(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(cartService.getCart(jwt.getClaimAsString("sub")));
     }
 
-    @PostMapping("/{userId}/items")
-    public ResponseEntity<Cart> addItem(@PathVariable String userId, @RequestBody CartItemRequestDto request) {
-        return ResponseEntity.ok(cartService.addItemToCart(userId, request));
+    @PostMapping("/items")
+    public ResponseEntity<Cart> addItem(@AuthenticationPrincipal Jwt jwt, @RequestBody CartItemRequestDto request) {
+        return ResponseEntity.ok(cartService.addItemToCart(jwt.getClaimAsString("sub"), request));
     }
 
-    @DeleteMapping("/{userId}/items/{productId}")
-    public ResponseEntity<Void> removeItem(@PathVariable String userId, @PathVariable Long productId) {
-        cartService.removeItemFromCart(userId, productId);
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<Void> removeItem(@AuthenticationPrincipal Jwt jwt, @PathVariable Long productId) {
+        cartService.removeItemFromCart(jwt.getClaimAsString("sub"), productId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> clearCart(@PathVariable String userId) {
-        cartService.clearCart(userId);
+    @DeleteMapping
+    public ResponseEntity<Void> clearCart(@AuthenticationPrincipal Jwt jwt) {
+        cartService.clearCart(jwt.getClaimAsString("sub"));
         return ResponseEntity.noContent().build();
     }
 }
