@@ -6,9 +6,9 @@ dependencies {
     implementation libs.springSecurityOAuth2ResourceServer
     implementation libs.springSecurityConfig
     implementation libs.mapStruct
-    implementation libs.mapStructProcessor
     implementation libs.swaggerui
     implementation libs.awsSdkS3
     compileOnly libs.lombok
     annotationProcessor libs.lombok
+    annotationProcessor libs.mapStructProcessor
 }

@@ -23,7 +23,6 @@ public interface ProductMapper {
     @Mapping(target = "inventory", ignore = true)
     @Mapping(target = "specs", ignore = true)
     @Mapping(target = "images", ignore = true) // Resimler create sırasında manuel işlenir
-    @Mapping(target = "createdByUserId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     Product toEntity(ProductCreateRequestDto dto);
 
@@ -51,7 +50,6 @@ public interface ProductMapper {
     @Mapping(target = "inventory", ignore = true)
     @Mapping(target = "specs", ignore = true)
     @Mapping(target = "images", ignore = true) // Resim güncellemesi ayrı yönetilir
-    @Mapping(target = "createdByUserId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     void updateEntity(@MappingTarget Product product, ProductUpdateRequestDto dto);
 }

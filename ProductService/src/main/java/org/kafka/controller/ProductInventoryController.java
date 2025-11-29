@@ -18,7 +18,7 @@ public class ProductInventoryController {
     private final ProductInventoryService inventoryService;
 
     @PutMapping
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('superuser')")
     public ResponseEntity<ProductDetailResponseDto> updateProductStock(
             @PathVariable Long productId,
             @Valid @RequestBody StockUpdateRequestDto request) {

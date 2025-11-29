@@ -18,7 +18,7 @@ public class ProductSpecController {
     private final ProductSpecService specService;
 
     @PutMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<ProductDetailResponseDto> updateProductSpecs(
             @PathVariable Long productId,
             @Valid @RequestBody SpecsUpdateRequestDto request) {

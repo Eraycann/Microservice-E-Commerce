@@ -25,7 +25,7 @@ public class ProductController {
     // --- 1. Ürün Oluşturma (CREATE) ---
     // Resim dosyası içerdiği için Content-Type: multipart/form-data olmalıdır.
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<ProductDetailResponseDto> createProduct(
             // JSON gövdesini temsil eder
             @RequestPart("data") @Valid ProductCreateRequestDto request,
@@ -39,7 +39,7 @@ public class ProductController {
     // --- 2. Ürün Güncelleme (UPDATE) ---
     // Sadece metinsel verileri günceller. Resim yönetimi ayrı endpointler ile yapılmalıdır.
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<ProductDetailResponseDto> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateRequestDto request) {
@@ -71,7 +71,7 @@ public class ProductController {
 
     // --- 6. Ürün Silme (DELETE) ---
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         // S3'teki resimler ve ilişkili tüm kayıtlar (Inventory, Spec, Image) servis katmanında silinir.

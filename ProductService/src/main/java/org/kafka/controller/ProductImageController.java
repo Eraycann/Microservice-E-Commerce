@@ -25,7 +25,7 @@ public class ProductImageController {
 
     // Belirli bir ürüne yeni bir resim dosyası ekler.
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<ProductImageResponseDto> addImage(
             @PathVariable Long productId,
             @RequestPart("image") MultipartFile imageFile) {
@@ -36,7 +36,7 @@ public class ProductImageController {
 
     // Resim ID'si ile resmi hem S3'ten hem DB'den siler.
     @DeleteMapping("/{imageId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<Void> deleteImage(@PathVariable Long productId, @PathVariable Long imageId) {
         // productId sadece URL yapısı için konulmuştur, silme işlemi imageId üzerinden yapılır.
         imageService.deleteImage(imageId);
@@ -45,7 +45,7 @@ public class ProductImageController {
 
     // Birden fazla resmin sırasını ve ana resim (isMain) bayrağını günceller.
     @PutMapping("/order")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<Void> updateImageOrderAndMainFlag(
             @PathVariable Long productId,
             @Valid @RequestBody List<ProductImageOrderUpdateDto> updates) {
