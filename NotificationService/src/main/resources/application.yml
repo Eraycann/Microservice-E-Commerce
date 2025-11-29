@@ -1,0 +1,58 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: notification-service
+
+  # --- GÜVENLİK (BU KISIM EKLENDİ) ---
+  # Resource Server bağımlılığı olduğu için bu ayar şarttır.
+  # Yoksa uygulama "JwtDecoder bulunamadı" hatası verir.
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/ecommerce-realm
+          jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
+
+  # --- MONGODB ---
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: ecommerce-notification-db
+      username: admin
+      password: admin
+      authentication-database: admin
+
+  # --- RABBITMQ ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        default-requeue-rejected: false # Hata yönetimi (DLQ) için false kalsın
+
+  # --- MAIL (SMTP) AYARLARI ---
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: sivrieraycan@gmail.com
+    # GÜVENLİK UYARISI: Bu şifreyi kodda açık tutmak yerine Environment Variable kullanmanı öneririm.
+    # Örn: ${GMAIL_APP_PASSWORD}
+    password: kyeo taru nrle joek
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+    default-encoding: UTF-8
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
