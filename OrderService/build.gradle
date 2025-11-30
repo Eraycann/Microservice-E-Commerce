@@ -34,6 +34,12 @@ dependencies {
     implementation libs.mapStruct
     implementation libs.swaggerui
 
+    // --- MONITORING & TRACING ---
+    implementation libs.springBootStarterActuator
+    implementation libs.micrometerRegistryPrometheus
+    implementation libs.micrometerTracingBridgeBrave
+    implementation libs.zipkinReporterBrave
+
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     annotationProcessor libs.mapStructProcessor
