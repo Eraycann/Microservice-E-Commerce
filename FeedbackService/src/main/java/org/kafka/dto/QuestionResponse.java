@@ -2,6 +2,8 @@ package org.kafka.dto;
 
 import lombok.Data;
 
+import java.time.Instant;
+
 @Data
 public class QuestionResponse {
     private String id;
@@ -15,6 +17,6 @@ public class QuestionResponse {
     private String answeredBy;
 
     // Tarihleri String olarak tutuyoruz (Jackson hatasını bypass etmek için)
-    private String askDate;
-    private String answerDate;
+    private Instant askDate;
+    private Instant answerDate;
 }

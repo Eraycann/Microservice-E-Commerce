@@ -1,6 +1,8 @@
 package org.kafka.dto;
 
 import lombok.Data;
+
+import java.time.Instant;
 import java.util.List;
 // import java.time.Instant; // Bunu silebilirsin veya kalabilir
 
@@ -15,5 +17,4 @@ public class ReviewResponse {
 
     // --- DEĞİŞİKLİK BURADA ---
     // Instant yerine String kullanıyoruz. Jackson String'i her zaman sever.
-    private String createdAt;
-}
+    private Instant createdAt;}

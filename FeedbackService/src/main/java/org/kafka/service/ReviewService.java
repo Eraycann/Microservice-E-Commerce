@@ -34,17 +34,15 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ReviewMapper reviewMapper;
-    private final StorageService storageService; // Dosya yükleme servisi inject edildi
+    private final StorageService storageService;
     private final MongoTemplate mongoTemplate;
 
     private static final int MAX_IMAGE_COUNT = 5;
     private static final List<String> BAD_WORDS = List.of("kötü", "berbat", "salak", "aptal");
 
-    // Parametre değişti: MultipartFile listesi eklendi
     @CacheEvict(value = "product_reviews", key = "#request.productId")
     public ReviewResponse createReview(String userId, String userFullName, ReviewRequest request, List<MultipartFile> images) {
 
-        // --- 1. Resim Sayısı Kontrolü (Bizim Exception) ---
         if (images != null && images.size() > MAX_IMAGE_COUNT) {
             throw new BaseDomainException(FeedbackErrorCode.TOO_MANY_IMAGES);
         }
@@ -57,15 +55,14 @@ public class ReviewService {
             throw new BaseDomainException(FeedbackErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
-        // --- 2. Resimleri Kaydet (Yerel veya S3) ---
-        // StorageService bize kaydedilen resimlerin URL listesini döner
         List<String> uploadedImageUrls = storageService.uploadImages(images);
+        String cleanComment = filterBadWords(request.getComment());
 
-        // --- 3. Kayıt İşlemi ---
         Review review = reviewMapper.toEntity(request);
         review.setUserId(userId);
         review.setUserFullName(userFullName);
-        review.setImageUrls(uploadedImageUrls); // URL'leri Entity'e set et
+        review.setComment(cleanComment);
+        review.setImageUrls(uploadedImageUrls);
 
         Review savedReview = reviewRepository.save(review);
         return reviewMapper.toResponse(savedReview);
@@ -75,25 +72,19 @@ public class ReviewService {
     public Page<ReviewResponse> getReviewsByProductId(String productId, Pageable pageable) {
         Page<Review> reviews = reviewRepository.findByProductId(productId, pageable);
 
-        // Entity Listesini DTO Listesine Çevir
         List<ReviewResponse> dtoList = reviews.getContent().stream()
                 .map(reviewMapper::toResponse)
                 .toList();
 
-        // TRICK: Standart "PageImpl" yerine kendi yazdığımız "RestPage" ile dönüyoruz.
-        // Bu sayede Redis deserialization hatası çözülüyor.
         return new RestPage<>(dtoList, pageable, reviews.getTotalElements());
     }
 
-    // --- YENİ: ÜRÜN PUAN ÖZETİ (AGGREGATION) ---
     public ProductRatingSummary getProductRatingSummary(String productId) {
-        // MongoDB Aggregation Pipeline
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(Criteria.where("productId").is(productId)),
                 Aggregation.group("rating").count().as("count")
         );
 
-        // Sonuç: [{ "_id": 5, "count": 12 }, { "_id": 4, "count": 3 }]
         AggregationResults<Map> results = mongoTemplate.aggregate(aggregation, "reviews", Map.class);
         List<Map> mappedResults = results.getMappedResults();
 
@@ -115,22 +106,17 @@ public class ReviewService {
         return new ProductRatingSummary(productId, average, totalReviews, starCounts);
     }
 
-    // Yardımcı Metot: Küfür Sansürü
     private String filterBadWords(String text) {
         String filtered = text;
         for (String word : BAD_WORDS) {
-            // Büyük küçük harf duyarsız değiştirme
             filtered = filtered.replaceAll("(?i)" + word, "***");
         }
         return filtered;
     }
 
     public void voteReview(String reviewId) {
-        // MongoDB'nin $inc (increment) operatörü ile atomik artırma işlemi
-        // Bu, veriyi çekip Java'da artırıp kaydetmekten çok daha performanslıdır.
         Update update = new Update().inc("helpfulCount", 1);
         Query query = Query.query(Criteria.where("id").is(reviewId));
-
         mongoTemplate.updateFirst(query, update, Review.class);
     }
 }
