@@ -1,0 +1,19 @@
+dependencies {
+    // 1. Temel Web & Data
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootDataMongo
+    implementation libs.springBootStarterAmqp      // RabbitMQ
+    implementation libs.springCloudEurekaClient
+
+    // 2. Mail & Şablon Motoru (GÜNCELLENDİ)
+    implementation libs.springBootStarterMail
+    implementation libs.springBootStarterThymeleaf
+
+    // 3. Boilerplate
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    // --- GÜVENLİK (SECURITY) ---
+    implementation libs.springSecurityOAuth2ResourceServer
+    implementation libs.springSecurityConfig
+}
