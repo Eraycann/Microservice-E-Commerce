@@ -27,7 +27,7 @@ spring:
       host: localhost
       port: 6379
       database: 0     # Redis'te 0-15 arası DB vardır, varsayılan 0'dır.
-      # password: yourpassword
+      password: admin
       timeout: 60000  # Bağlantı zaman aşımı (ms)
 
 
