@@ -1,5 +1,6 @@
 package org.kafka.controller;
 
+import org.kafka.dto.ProductCartDetailDto;
 import org.kafka.dto.ProductCreateRequestDto;
 import org.kafka.dto.ProductDetailResponseDto;
 import org.kafka.dto.ProductUpdateRequestDto;
@@ -64,6 +65,11 @@ public class ProductController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/cart-detail")
+    public ResponseEntity<ProductCartDetailDto> getProductForCart(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getProductForCart(id));
     }
 }
 
