@@ -1,6 +1,7 @@
 package org.kafka.service;
 
 import lombok.RequiredArgsConstructor;
+import org.kafka.dto.ProductCartDetailDto;
 import org.kafka.dto.ProductCreateRequestDto;
 import org.kafka.dto.ProductDetailResponseDto;
 import org.kafka.dto.ProductUpdateRequestDto;
@@ -190,6 +191,29 @@ public class ProductService {
             }
         }
         return imageEntities;
+    }
+
+
+    // CartService tarafından çağrılan metot
+    public ProductCartDetailDto getProductForCart(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        // 1. MapStruct ile temel dönüşümü yap
+        ProductCartDetailDto dto = productMapper.toCartDetailDto(product);
+
+        // 2. Özel (Manual) İşlem: Ana resmi bulma
+        // Bu mantık Mapper ile zor olduğu için Service katmanında kalır.
+        String imageUrl = product.getImages().stream()
+                .filter(ProductImage::isMain)
+                .findFirst()
+                .map(ProductImage::getUrl)
+                .orElse(null);
+
+        // 3. DTO'yu eksik bilgiyle tamamla
+        dto.setMainImageUrl(imageUrl);
+
+        return dto;
     }
 
     // --- ProductQueryClient Tarafından Çağrılan Metotlar ---
