@@ -65,6 +65,17 @@ spring:
                 name: recommendationCircuitBreaker
                 fallbackUri: forward:/fallback/recommendation
 
+        # --- ORDER SERVICE ---
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderCircuitBreaker
+                fallbackUri: forward:/fallback/order
+
 # --- 3. EUREKA ---
 eureka:
   client:

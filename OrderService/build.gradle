@@ -1,0 +1,15 @@
+dependencies {
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootDataJpa
+    implementation libs.postgreSQL
+    implementation libs.springCloudEurekaClient
+    implementation libs.springSecurityOAuth2ResourceServer
+    implementation libs.springSecurityConfig
+    implementation libs.mapStruct
+    implementation libs.swaggerui
+    implementation libs.springBootDataRedis
+    implementation libs.springCloudStarterOpenFeign
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    annotationProcessor libs.mapStructProcessor
+}
