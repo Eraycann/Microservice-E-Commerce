@@ -1,14 +1,45 @@
 dependencies {
+    // ==============================================================
+    // 1. WEB & CORE (API ve Temel İşlevler)
+    // ==============================================================
     implementation libs.springBootStarterWeb
+    // ÖNEMLİ EKLEME: Request Body validasyonları (@NotNull, @Min) için şarttır.
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // ÖNEMLİ EKLEME: Eureka'nın servisin "UP" olduğunu anlaması (Health Check) için şarttır.
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // ==============================================================
+    // 2. VERİ TABANI & PERSISTENCE (PostgreSQL & Redis)
+    // ==============================================================
     implementation libs.springBootDataJpa
     implementation libs.postgreSQL
-    implementation libs.springCloudEurekaClient
+    implementation libs.springBootDataRedis // Cart (Sepet) işlemleri için
+
+    // ==============================================================
+    // 3. MİKROSERVİS İLETİŞİMİ (Eureka & Feign & RabbitMQ)
+    // ==============================================================
+    implementation libs.springCloudEurekaClient         // Discovery
+    implementation libs.springCloudStarterOpenFeign     // Product Service'i çağırmak için
+    implementation libs.springBootStarterAmqp           // Recommendation'a event atmak için (RabbitMQ)
+
+    // ==============================================================
+    // 4. GÜVENLİK (OAuth2 & Keycloak)
+    // ==============================================================
     implementation libs.springSecurityOAuth2ResourceServer
-    implementation libs.springSecurityConfig
+    // implementation libs.springSecurityConfig // 'resource-server' kütüphanesi genelde core security'i getirir, fazlalık olabilir ama kalmasında zarar yok.
+
+    // ==============================================================
+    // 5. ARAÇLAR & DOKÜMANTASYON
+    // ==============================================================
     implementation libs.mapStruct
     implementation libs.swaggerui
-    implementation libs.springBootDataRedis
-    implementation libs.springCloudStarterOpenFeign
+
+    // --- MONITORING & TRACING ---
+    implementation libs.springBootStarterActuator
+    implementation libs.micrometerRegistryPrometheus
+    implementation libs.micrometerTracingBridgeBrave
+    implementation libs.zipkinReporterBrave
+
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     annotationProcessor libs.mapStructProcessor

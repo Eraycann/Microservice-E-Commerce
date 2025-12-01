@@ -3,6 +3,7 @@ package org.kafka.cartService.service;
 import lombok.RequiredArgsConstructor;
 import org.kafka.cartService.client.ProductServiceClient;
 import org.kafka.cartService.dto.ProductCartDetailDto;
+import org.kafka.cartService.event.CartEventPublisher;
 import org.kafka.cartService.model.Cart;
 import org.kafka.cartService.model.CartItem;
 import org.kafka.cartService.repository.CartRepository;
@@ -21,6 +22,7 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final ProductServiceClient productServiceClient;
+    private final CartEventPublisher cartEventPublisher; // Inject Edildi
 
     private static final int MAX_ITEM_QUANTITY = 99;
 
@@ -104,6 +106,10 @@ public class CartService {
 
         // 6. Redis'e Kaydet
         cartRepository.save(cart);
+
+        // --- YENİ: RECOMMENDATION SERVICE'E HABER VER ---
+        // Ürün ID'si Long ise String'e çeviriyoruz
+        cartEventPublisher.publishAddToCartEvent(userId, String.valueOf(request.getProductId()));
 
         return cart;
     }
