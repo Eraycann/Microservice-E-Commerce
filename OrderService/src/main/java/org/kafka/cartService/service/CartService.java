@@ -1,7 +1,7 @@
 package org.kafka.cartService.service;
 
 import lombok.RequiredArgsConstructor;
-import org.kafka.cartService.client.ProductServiceClient;
+import org.kafka.client.ProductServiceClient;
 import org.kafka.cartService.dto.ProductCartDetailDto;
 import org.kafka.cartService.event.CartEventPublisher;
 import org.kafka.cartService.model.Cart;

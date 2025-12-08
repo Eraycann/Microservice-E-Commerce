@@ -1,4 +1,4 @@
-package org.kafka.orderService.client;
+package org.kafka.client;
 
 import org.kafka.orderService.dto.PaymentRequest;
 import org.springframework.cloud.openfeign.FeignClient;
