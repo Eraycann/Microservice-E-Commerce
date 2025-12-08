@@ -62,4 +62,36 @@ public class ProductInventoryService {
         // Güncel Product detaylarını döndür
         return productMapper.toDetailResponse(product);
     }
+
+    /**
+     * SAGA: Order Service tarafından çağrılır.
+     * Stoğu güvenli bir şekilde düşürür.
+     */
+    @Transactional
+    public void reduceStock(Long productId, Integer quantity) {
+        // Ürün var mı kontrolü (Opsiyonel ama iyi olur)
+        if (!productRepository.existsById(productId)) {
+            throw new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // Atomik güncelleme
+        int updatedRows = inventoryRepository.reduceStock(productId, quantity);
+
+        // Eğer 0 satır güncellendiyse, stok yetersiz demektir.
+        if (updatedRows == 0) {
+            throw new BaseDomainException(ProductErrorCode.INSUFFICIENT_STOCK);
+        }
+    }
+
+    /**
+     * SAGA ROLLBACK: Order Service tarafından çağrılır.
+     * Stoğu geri iade eder.
+     */
+    @Transactional
+    public void restoreStock(Long productId, Integer quantity) {
+        if (!productRepository.existsById(productId)) {
+            throw new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+        inventoryRepository.restoreStock(productId, quantity);
+    }
 }

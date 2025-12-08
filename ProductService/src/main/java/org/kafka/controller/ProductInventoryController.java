@@ -26,4 +26,28 @@ public class ProductInventoryController {
         ProductDetailResponseDto response = inventoryService.updateStock(productId, request);
         return ResponseEntity.ok(response);
     }
+
+    // --- SAGA ENDPOINTS (Order Service İçin) ---
+
+    // Stok Düşme
+    // URL: POST /api/v1/products/{id}/reduce-stock?quantity=1
+    @PostMapping("/reduce-stock")
+    public ResponseEntity<Void> reduceStock(
+            @PathVariable Long productId,
+            @RequestParam Integer quantity) {
+
+        inventoryService.reduceStock(productId, quantity);
+        return ResponseEntity.ok().build();
+    }
+
+    // Stok İade (Rollback)
+    // URL: POST /api/v1/products/{id}/restore-stock?quantity=1
+    @PostMapping("/restore-stock")
+    public ResponseEntity<Void> restoreStock(
+            @PathVariable Long productId,
+            @RequestParam Integer quantity) {
+
+        inventoryService.restoreStock(productId, quantity);
+        return ResponseEntity.ok().build();
+    }
 }
