@@ -1,0 +1,11 @@
+dependencies {
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootDataJpa
+    implementation libs.postgreSQL
+    implementation libs.springCloudEurekaClient
+    implementation libs.springSecurityOAuth2ResourceServer
+    // implementation libs.springSecurityConfig (Gerekirse)
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+}
