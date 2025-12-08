@@ -1,18 +1,20 @@
-package org.kafka.orderService.client;
+package org.kafka.client; // Ortak paket
 
+import org.kafka.cartService.dto.ProductCartDetailDto;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @FeignClient(name = "product-service")
 public interface ProductServiceClient {
 
-    // Stok Düş (Stock < Quantity ise 400 döner)
+    // Cart için gerekli metod
+    @GetMapping("/api/v1/products/{id}/cart-detail")
+    ProductCartDetailDto getProductForCart(@PathVariable("id") Long id);
+
+    // Order için gerekli metodlar
     @PostMapping("/api/products/{id}/reduce-stock")
     void reduceStock(@PathVariable("id") String productId, @RequestParam int quantity);
 
-    // Stok İade Et (Rollback senaryosu için)
     @PostMapping("/api/products/{id}/restore-stock")
     void restoreStock(@PathVariable("id") String productId, @RequestParam int quantity);
 }

@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.kafka.cartService.model.Cart;
 import org.kafka.cartService.service.CartService;
+import org.kafka.client.ProductServiceClient;
 import org.kafka.exception.base.BaseDomainException; // Import
 import org.kafka.exception.code.OrderErrorCode;     // Import
-import org.kafka.orderService.client.PaymentServiceClient;
-import org.kafka.orderService.client.ProductServiceClient;
+import org.kafka.client.PaymentServiceClient;
 import org.kafka.orderService.dto.OrderResponse;
 import org.kafka.orderService.dto.PaymentRequest;
 import org.kafka.orderService.enums.OrderStatus;
