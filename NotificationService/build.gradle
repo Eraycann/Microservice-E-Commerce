@@ -16,4 +16,8 @@ dependencies {
     // --- GÜVENLİK (SECURITY) ---
     implementation libs.springSecurityOAuth2ResourceServer
     implementation libs.springSecurityConfig
+
+    // --- FEIGN CLIENT (YENİ) ---
+    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    implementation libs.springCloudStarterOpenFeign
 }

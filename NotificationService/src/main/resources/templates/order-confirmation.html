@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head_section}"></head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments :: logo_header}"></div>
+
+    <div>
+        <h3>Merhaba, <span th:text="${fullName}">Değerli Müşterimiz</span>! 🎉</h3>
+        <p>Siparişiniz başarıyla alındı ve hazırlanmaya başlandı.</p>
+
+        <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>Sipariş No:</strong> <span th:text="${orderNumber}">123456</span></p>
+            <p><strong>Toplam Tutar:</strong> <span th:text="${totalPrice}">0.00</span> TL</p>
+        </div>
+
+        <p>Siparişinizin durumunu "Hesabım" sayfasından takip edebilirsiniz.</p>
+
+        <div style="text-align: center;">
+            <a href="#" class="btn">Siparişimi Görüntüle</a>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments :: footer_section}"></div>
+</div>
+</body>
+</html>
