@@ -36,7 +36,7 @@ public class ProductService {
      * Yeni ürün oluşturur, resimleri S3'e yükler ve ilişkili entityleri (Inventory, Spec, Image) başlatır.
      */
     @Transactional
-    public ProductDetailResponseDto createProduct(ProductCreateRequestDto request,
+    public ProductDetailResponseDto  createProduct(ProductCreateRequestDto request,
                                                   List<MultipartFile> images) {
 
         // 1. Kategori ve Marka Doğrulama (MasterDataClient ile)
