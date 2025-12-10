@@ -9,4 +9,8 @@ dependencies {
     implementation libs.springBootStarterAmqp // RabbitMQ
     compileOnly libs.lombok
     annotationProcessor libs.lombok
+
+    // --- FEIGN CLIENT (YENİ) ---
+    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    implementation libs.springCloudStarterOpenFeign
 }
