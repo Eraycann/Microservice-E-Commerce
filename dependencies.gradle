@@ -41,6 +41,7 @@ ext {
             // NoSQL Çözümleri
             springBootDataRedis             : "org.springframework.boot:spring-boot-starter-data-redis:${versions.springBoot}",
             springBootDataMongo             : "org.springframework.boot:spring-boot-starter-data-mongodb:${versions.springBoot}",
+            springBootStarterDataElasticsearch : "org.springframework.boot:spring-boot-starter-data-elasticsearch:${versions.springBoot}",
 
             // ----------------------------------------------------------
             // D. MİKROSERVİS ALTYAPISI (DISCOVERY & CONFIG)
