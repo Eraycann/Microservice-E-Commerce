@@ -6,10 +6,8 @@ import org.kafka.model.ProductIndex;
 import org.kafka.repository.ProductSearchRepository;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -18,33 +16,38 @@ public class SearchService {
 
     private final ProductSearchRepository searchRepository;
 
-    /**
-     * Gelen veriyi Elasticsearch'e kaydeder (Indexler)
-     */
+    // ... (saveProduct ve deleteProduct metodları aynen kalıyor) ...
     public void saveProduct(ProductIndex productIndex) {
         searchRepository.save(productIndex);
-        log.info("✅ Ürün Elasticsearch'e indekslendi: {}", productIndex.getName());
     }
 
-    /**
-     * Ürünü Elasticsearch'ten siler
-     */
     public void deleteProduct(String id) {
         searchRepository.deleteById(id);
-        log.info("🗑️ Ürün Elasticsearch'ten silindi ID: {}", id);
+    }
+
+    // --- YENİLENMİŞ ARAMA METODLARI ---
+
+    /**
+     * SENARYO 1: Basit Arama Kutusu
+     * Kullanıcı sadece yazı yazar. Diğer filtreler boştur.
+     */
+    public List<ProductIndex> search(String query) {
+        // Tüm filtreleri null geçerek ana metodu çağırıyoruz.
+        return searchRepository.searchByFilters(query, null, null, null, null, null);
     }
 
     /**
-     * Dinamik Arama Metodu
-     * Eğer 'query' boşsa tümünü getirir, doluysa isme göre arar.
-     * İleride buraya CriteriaQuery ile daha gelişmiş filtreler eklenebilir.
+     * SENARYO 2: Detaylı Filtreleme
+     * Kullanıcı hem arama yapabilir hem de filtre seçebilir.
      */
-    public List<ProductIndex> search(String query) {
-        if (query == null || query.trim().isEmpty()) {
-            // Iterable -> List dönüşümü
-            return StreamSupport.stream(searchRepository.findAll().spliterator(), false)
-                    .collect(Collectors.toList());
-        }
-        return searchRepository.findByNameContainingOrDescriptionContaining(query, query);
+    public List<ProductIndex> filterProducts(
+            String query,
+            String brand,
+            String category,
+            Double minPrice,
+            Double maxPrice,
+            Map<String, String> specs
+    ) {
+        return searchRepository.searchByFilters(query, brand, category, minPrice, maxPrice, specs);
     }
 }
