@@ -1,18 +1,20 @@
 dependencies {
-    // 1. Web & Data
+    // 1. Web & Data (Elasticsearch)
     implementation libs.springBootStarterWeb
-
-    // Elasticsearch (Artık merkezi dosyadan geliyor)
     implementation libs.springBootStarterDataElasticsearch
 
-    // 2. Mesajlaşma & Discovery
+    // 2. Mesajlaşma (RabbitMQ) & Discovery (Eureka)
     implementation libs.springBootStarterAmqp
     implementation libs.springCloudEurekaClient
 
-    // 3. Utils
+    // 3. Güvenlik (SecurityConfig sınıfının çalışması için ŞART)
+    implementation libs.springSecurityConfig              // @EnableWebSecurity, HttpSecurity vb. için
+    implementation libs.springSecurityOAuth2ResourceServer // Jwt, OAuth2ResourceServer vb. için
+
+    // 4. Utils (JSON Tarih Formatı)
     implementation libs.jacksonDatatypeJsr310
 
-    // 4. Boilerplate
+    // 5. Boilerplate (Lombok)
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 }
