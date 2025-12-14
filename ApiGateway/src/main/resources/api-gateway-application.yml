@@ -36,7 +36,8 @@ spring:
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/products/**
+            # Controller'larındaki @RequestMapping path'leri ile birebir uyumlu
+            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/brands/**
           filters:
             - name: CircuitBreaker
               args:

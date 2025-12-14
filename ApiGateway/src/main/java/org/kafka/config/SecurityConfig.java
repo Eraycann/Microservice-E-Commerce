@@ -2,6 +2,7 @@ package org.kafka.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // EKLENDİ: GET isteklerini ayırt etmek için
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -46,10 +47,25 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(requestHandler)
                 )
                 .authorizeExchange(exchanges -> exchanges
-                        // 4. İZİN YÖNETİMİ
-                        // Statik dosyalar ve login/logout URL'leri herkese açık.
-                        // Geri kalan her yer için Token/Oturum şart.
+                        // 1. Statik Kaynaklar ve Login
                         .pathMatchers("/", "/login/**", "/oauth2/**", "/public/**", "/favicon.ico").permitAll()
+
+                        // 2. PRODUCT SERVICE - HALKA AÇIK ENDPOINTLER (Sadece GET)
+                        // Controller'larında tanımladığın endpointlere göre:
+
+                        // Ürünleri Listeleme ve Detay (ProductController)
+                        .pathMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+
+                        // Kategorileri Listeleme (CategoryController)
+                        .pathMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+
+                        // Markaları Listeleme (BrandController)
+                        .pathMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
+
+                        // Not: Image, Stock ve Spec controller'larında sadece PUT, POST, DELETE var. (Product Service mikroservis için)
+                        // Biz yukarıda sadece GET'e izin verdiğimiz için onlar otomatik olarak KORUMALI kalır.
+
+                        // 3. Diğer her şey için Token Şart
                         .anyExchange().authenticated()
                 )
                 .oauth2Login(Customizer.withDefaults()) // 5. OAuth2 Login akışını başlatır.
@@ -86,31 +102,3 @@ public class SecurityConfig {
         return oidcLogoutSuccessHandler;
     }
 }
-
-
-/*
-Özet: Sistem Nasıl Çalışıyor? (Büyük Resim)
-Giriş: Kullanıcı "Giriş Yap" der. Gateway -> Keycloak'a yollar. Kullanıcı döner.
-
-Cookie: Gateway, kullanıcıya SESSION (Kimlik) ve XSRF-TOKEN (İmza) çerezlerini verir.
-
-İstek: Kullanıcı bir butona basar.
-
-Gateway SESSION çerezini alır, hafızasındaki JWT'yi bulur.
-
-JWT'yi Header'a ekler (TokenRelay).
-
-İsteği Mikroservise iletir.
-
-Çıkış (Logout):
-
-Frontend POST /logout yapar (Header'da X-XSRF-TOKEN ile).
-
-Gateway imzayı kontrol eder (XOR kapalı olduğu için düz karşılaştırır).
-
-Oturumu siler.
-
-Keycloak'a yönlendirir (O da siler).
-
-Ana sayfaya tertemiz dönersin.
-* */
