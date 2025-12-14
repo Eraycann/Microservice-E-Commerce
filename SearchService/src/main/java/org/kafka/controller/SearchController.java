@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/search")
@@ -15,8 +17,30 @@ public class SearchController {
 
     private final SearchService searchService;
 
+    // 1. Basit Arama Kutusu (Header Search Bar)
     @GetMapping
     public ResponseEntity<List<ProductIndex>> searchProducts(@RequestParam(required = false) String query) {
         return ResponseEntity.ok(searchService.search(query));
+    }
+
+    // 2. Detaylı Filtreleme Sayfası (Category Page / Search Results Page)
+    @GetMapping("/filter")
+    public ResponseEntity<List<ProductIndex>> filterProducts(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String brand,    // EKLENDİ
+            @RequestParam(required = false) String category, // EKLENDİ
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam Map<String, String> allParams
+    ) {
+        // "spec_" ile başlayan parametreleri ayıklıyoruz.
+        Map<String, String> specs = allParams.entrySet().stream()
+                .filter(e -> e.getKey().startsWith("spec_"))
+                .collect(Collectors.toMap(
+                        k -> k.getKey().replace("spec_", ""),
+                        Map.Entry::getValue
+                ));
+
+        return ResponseEntity.ok(searchService.filterProducts(query, brand, category, minPrice, maxPrice, specs));
     }
 }
