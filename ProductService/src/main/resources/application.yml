@@ -5,40 +5,49 @@ spring:
   application:
     name: product-service
 
+  # --- VERITABANI (PostgreSQL) ---
   datasource:
     url: jdbc:postgresql://localhost:5432/productdb
-    username: postgres
+    username: postgres  # Eğer diğer servislerde 'admin' kullandıysan burayı da kontrol et
     password: postgres
+    driver-class-name: org.postgresql.Driver
 
+  # --- JPA / HIBERNATE ---
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: true
     properties:
       hibernate:
         format_sql: true
         jdbc:
           lob:
             non_contextual_creation: true
-    show-sql: true
 
+  # --- RABBITMQ (Search Service'e event atmak için EKLENDİ) ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
 
+  # --- GÜVENLİK (Keycloak) ---
   security:
     oauth2:
       resourceserver:
         jwt:
-          # Token'ın imzasını kontrol etmek için Keycloak adresi
           issuer-uri: http://localhost:8180/realms/ecommerce-realm
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
-
+# --- AWS S3 (Dosya Yükleme) ---
 aws:
   s3:
-    access-key:
-    secret-key:
-    region:
-    bucket-name:
+    access-key: YOUR_ACCESS_KEY
+    secret-key: YOUR_SECRET_KEY
+    region: us-east-1
+    bucket-name: ecommerce-product-images
 
-
+# --- SERVICE DISCOVERY ---
 eureka:
   client:
     service-url:
