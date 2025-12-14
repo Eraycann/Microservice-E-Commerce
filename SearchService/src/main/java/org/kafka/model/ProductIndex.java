@@ -10,6 +10,7 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 @Builder
@@ -44,4 +45,9 @@ public class ProductIndex {
 
     @Field(type = FieldType.Keyword)
     private String imageUrl;
+
+    // JSONB verisini burada Map olarak tutuyoruz.
+    // Elasticsearch bunu "specs.color", "specs.size" gibi indeksler.
+    @Field(type = FieldType.Object)
+    private Map<String, Object> specs;
 }
