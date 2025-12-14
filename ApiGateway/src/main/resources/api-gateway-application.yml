@@ -54,7 +54,7 @@ spring:
                 name: userCircuitBreaker
                 fallbackUri: forward:/fallback/user
 
-        # --- RECOMMENDATION SERVICE (YENİ) ---
+        # --- RECOMMENDATION SERVICE ---
         - id: recommendation-service
           uri: lb://recommendation-service
           predicates:
@@ -75,6 +75,39 @@ spring:
               args:
                 name: orderCircuitBreaker
                 fallbackUri: forward:/fallback/order
+
+        # --- [YENİ] PAYMENT SERVICE ---
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: paymentCircuitBreaker
+                fallbackUri: forward:/fallback/payment
+
+        # --- [YENİ] NOTIFICATION SERVICE ---
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationCircuitBreaker
+                fallbackUri: forward:/fallback/notification
+
+        # --- [YENİ] FEEDBACK SERVICE ---
+        - id: feedback-service
+          uri: lb://feedback-service
+          predicates:
+            - Path=/api/feedbacks/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: feedbackCircuitBreaker
+                fallbackUri: forward:/fallback/feedback
 
 # --- 3. EUREKA ---
 eureka:
@@ -101,6 +134,14 @@ resilience4j:
         baseConfig: default
       userCircuitBreaker:
         baseConfig: default
-      # Yeni eklenen instance:
       recommendationCircuitBreaker:
+        baseConfig: default
+      orderCircuitBreaker: # (Eksikti, eklendi)
+        baseConfig: default
+      # --- YENİ EKLENENLER ---
+      paymentCircuitBreaker:
+        baseConfig: default
+      notificationCircuitBreaker:
+        baseConfig: default
+      feedbackCircuitBreaker:
         baseConfig: default
