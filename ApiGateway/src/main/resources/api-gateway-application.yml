@@ -36,7 +36,6 @@ spring:
         - id: product-service
           uri: lb://product-service
           predicates:
-            # Controller'larındaki @RequestMapping path'leri ile birebir uyumlu
             - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/brands/**
           filters:
             - name: CircuitBreaker
@@ -77,7 +76,7 @@ spring:
                 name: orderCircuitBreaker
                 fallbackUri: forward:/fallback/order
 
-        # --- [YENİ] PAYMENT SERVICE ---
+        # --- PAYMENT SERVICE ---
         - id: payment-service
           uri: lb://payment-service
           predicates:
@@ -88,7 +87,7 @@ spring:
                 name: paymentCircuitBreaker
                 fallbackUri: forward:/fallback/payment
 
-        # --- [YENİ] NOTIFICATION SERVICE ---
+        # --- NOTIFICATION SERVICE ---
         - id: notification-service
           uri: lb://notification-service
           predicates:
@@ -99,7 +98,7 @@ spring:
                 name: notificationCircuitBreaker
                 fallbackUri: forward:/fallback/notification
 
-        # --- [YENİ] FEEDBACK SERVICE ---
+        # --- FEEDBACK SERVICE ---
         - id: feedback-service
           uri: lb://feedback-service
           predicates:
@@ -109,6 +108,17 @@ spring:
               args:
                 name: feedbackCircuitBreaker
                 fallbackUri: forward:/fallback/feedback
+
+        # --- [YENİ] SEARCH SERVICE ---
+        - id: search-service
+          uri: lb://search-service
+          predicates:
+            - Path=/api/v1/search/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: searchCircuitBreaker
+                fallbackUri: forward:/fallback/search
 
 # --- 3. EUREKA ---
 eureka:
@@ -137,12 +147,14 @@ resilience4j:
         baseConfig: default
       recommendationCircuitBreaker:
         baseConfig: default
-      orderCircuitBreaker: # (Eksikti, eklendi)
+      orderCircuitBreaker:
         baseConfig: default
-      # --- YENİ EKLENENLER ---
       paymentCircuitBreaker:
         baseConfig: default
       notificationCircuitBreaker:
         baseConfig: default
       feedbackCircuitBreaker:
+        baseConfig: default
+      # --- YENİ EKLENEN ---
+      searchCircuitBreaker:
         baseConfig: default
