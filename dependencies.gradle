@@ -41,6 +41,7 @@ ext {
             // NoSQL Çözümleri
             springBootDataRedis             : "org.springframework.boot:spring-boot-starter-data-redis:${versions.springBoot}",
             springBootDataMongo             : "org.springframework.boot:spring-boot-starter-data-mongodb:${versions.springBoot}",
+            springBootStarterDataElasticsearch : "org.springframework.boot:spring-boot-starter-data-elasticsearch:${versions.springBoot}",
 
             // ----------------------------------------------------------
             // D. MİKROSERVİS ALTYAPISI (DISCOVERY & CONFIG)
@@ -90,6 +91,29 @@ ext {
             mapStructProcessor              : "org.mapstruct:mapstruct-processor:$versions.mapStruct",
 
             // I. MESAJLAŞMA (MESSAGING - RABBITMQ)
-            springBootStarterAmqp           : "org.springframework.boot:spring-boot-starter-amqp:${versions.springBoot}"
+            springBootStarterAmqp           : "org.springframework.boot:spring-boot-starter-amqp:${versions.springBoot}",
+
+            // J. BİLDİRİM VE ŞABLONLAR (NOTIFICATION & TEMPLATING)
+            springBootStarterMail           : "org.springframework.boot:spring-boot-starter-mail:${versions.springBoot}",
+            springBootStarterThymeleaf      : "org.springframework.boot:spring-boot-starter-thymeleaf:${versions.springBoot}",
+            springBootStarterAmqp           : "org.springframework.boot:spring-boot-starter-amqp:${versions.springBoot}",
+
+            // ----------------------------------------------------------
+            // J. JSON VE SERIALIZATION
+            // ----------------------------------------------------------
+            jacksonDatatypeJsr310           : "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
+
+            // --- K. GÖZLEMLEME (OBSERVABILITY) ---
+            // 1. Actuator (Sağlık ve Metrikler)
+            springBootStarterActuator       : "org.springframework.boot:spring-boot-starter-actuator:${versions.springBoot}",
+
+            // 2. Prometheus (Metrik Formatlayıcı)
+            micrometerRegistryPrometheus    : "io.micrometer:micrometer-registry-prometheus",
+
+            // 3. Distributed Tracing (Eski adıyla Sleuth - Log Takibi)
+            micrometerTracingBridgeBrave    : "io.micrometer:micrometer-tracing-bridge-brave",
+
+            // 4. Zipkin Reporter (Trace'leri Zipkin'e göndermek için)
+            zipkinReporterBrave             : "io.zipkin.reporter2:zipkin-reporter-brave"
     ]
 }

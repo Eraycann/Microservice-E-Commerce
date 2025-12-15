@@ -1,0 +1,45 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: feedback-service
+
+  # --- JACKSON AYARLARI (YENİ EKLENDİ) ---
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false # Tarihleri array yerine ISO String (2025-11-30T...) olarak basar
+    default-property-inclusion: non_null # Null olan alanları JSON cevabından çıkarır (Payload küçülür)
+
+  # --- MONGODB AYARLARI ---
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: ecommerce-feedback-db
+      username: admin
+      password: admin
+      authentication-database: admin
+
+  # --- RABBITMQ AYARLARI ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        default-requeue-rejected: false
+
+  # --- GÜVENLİK (Resource Server) ---
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/ecommerce-realm
+          jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

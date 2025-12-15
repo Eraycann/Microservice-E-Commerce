@@ -1,0 +1,23 @@
+{
+  "analysis": {
+    "filter": {
+      "my_synonym_filter": {
+        "type": "synonym",
+        "synonyms": [
+          "laptop, notebook, dizüstü",
+          "tv, televizyon, ekran",
+          "cep telefonu, telefon, smartphone"
+        ]
+      }
+    },
+    "analyzer": {
+      "my_custom_analyzer": {
+        "tokenizer": "standard",
+        "filter": [
+          "lowercase",
+          "my_synonym_filter"
+        ]
+      }
+    }
+  }
+}

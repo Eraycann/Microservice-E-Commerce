@@ -1,0 +1,29 @@
+dependencies {
+    // Web & Data
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootDataMongo
+    implementation libs.springCloudEurekaClient
+
+    // Güvenlik (Resource Server)
+    implementation libs.springSecurityOAuth2ResourceServer
+    implementation libs.springSecurityConfig
+
+    // Mesajlaşma
+    implementation libs.springBootStarterAmqp
+
+    // Redis
+    implementation libs.springBootDataRedis
+
+    // JSON İşlemleri (Tarih Formatı İçin YENİ EKLENDİ)
+    implementation libs.jacksonDatatypeJsr310
+
+    // Boilerplate
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    implementation libs.mapStruct
+    annotationProcessor libs.mapStructProcessor
+
+    // --- FEIGN CLIENT (YENİ) ---
+    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    implementation libs.springCloudStarterOpenFeign
+}

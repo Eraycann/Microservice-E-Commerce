@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head_section}"></head>
+<body>
+<div class="container">
+    <div th:replace="~{fragments :: logo_header}"></div>
+
+    <div>
+        <h3>Hoşgeldin, <span th:text="${firstName}">Kullanıcı</span>! 👋</h3>
+        <p>E-Ticaret platformumuza katıldığın için çok mutluyuz.</p>
+        <p>Sizin için seçtiğimiz özel ürünlere hemen göz atın.</p>
+
+        <div style="text-align: center;">
+            <a href="http://localhost:3000" class="btn">Alışverişe Başla</a>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments :: footer_section}"></div>
+</div>
+</body>
+</html>

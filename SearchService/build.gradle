@@ -1,0 +1,16 @@
+dependencies {
+    // 1. Web & Data (Elasticsearch)
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootStarterDataElasticsearch
+
+    // 2. Mesajlaşma (RabbitMQ) & Discovery (Eureka)
+    implementation libs.springBootStarterAmqp
+    implementation libs.springCloudEurekaClient
+
+    // 4. Utils (JSON Tarih Formatı)
+    implementation libs.jacksonDatatypeJsr310
+
+    // 5. Boilerplate (Lombok)
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+}

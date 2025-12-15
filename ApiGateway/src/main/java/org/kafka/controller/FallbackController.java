@@ -19,11 +19,34 @@ public class FallbackController {
         return Mono.just("⚠️ Kullanıcı Servisi bakımda veya aşırı yoğun. (Circuit Breaker Activated)");
     }
 
-    // --- YENİ EKLENEN FALLBACK ---
     @GetMapping("/recommendation")
     public Mono<String> recommendationServiceFallback() {
-        // Öneri sistemi kritik bir servis değildir (Non-Critical).
-        // Çökmesi durumunda ana sayfa çalışmaya devam etmelidir.
         return Mono.just("⚠️ Kişisel öneriler şu an hazırlanamıyor. Popüler ürünlere göz atabilirsiniz.");
+    }
+
+    @GetMapping("/order")
+    public Mono<String> orderServiceFallback() {
+        return Mono.just("⚠️ Sipariş Servisi şu an yanıt veremiyor. Lütfen daha sonra tekrar deneyiniz.");
+    }
+
+    @GetMapping("/payment")
+    public Mono<String> paymentServiceFallback() {
+        return Mono.just("⚠️ Ödeme Servisi geçici olarak hizmet dışıdır. Lütfen daha sonra tekrar deneyiniz.");
+    }
+
+    @GetMapping("/notification")
+    public Mono<String> notificationServiceFallback() {
+        return Mono.just("⚠️ Bildirim tercihleri şu an yüklenemiyor.");
+    }
+
+    @GetMapping("/feedback")
+    public Mono<String> feedbackServiceFallback() {
+        return Mono.just("⚠️ Değerlendirme sistemi şu an yanıt veremiyor.");
+    }
+
+    // --- YENİ EKLENEN ---
+    @GetMapping("/search")
+    public Mono<String> searchServiceFallback() {
+        return Mono.just("⚠️ Arama servisi şu an geçici olarak hizmet veremiyor.");
     }
 }
