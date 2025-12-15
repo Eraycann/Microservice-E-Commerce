@@ -7,10 +7,6 @@ dependencies {
     implementation libs.springBootStarterAmqp
     implementation libs.springCloudEurekaClient
 
-    // 3. Güvenlik (SecurityConfig sınıfının çalışması için ŞART)
-    implementation libs.springSecurityConfig              // @EnableWebSecurity, HttpSecurity vb. için
-    implementation libs.springSecurityOAuth2ResourceServer // Jwt, OAuth2ResourceServer vb. için
-
     // 4. Utils (JSON Tarih Formatı)
     implementation libs.jacksonDatatypeJsr310
 

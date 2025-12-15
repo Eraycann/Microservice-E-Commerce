@@ -50,4 +50,15 @@ public class SearchService {
     ) {
         return searchRepository.searchByFilters(query, brand, category, minPrice, maxPrice, specs);
     }
+
+    /**
+     * SENARYO 3: Autocomplete
+     * Kullanıcı harflere bastıkça çalışır.
+     */
+    public List<String> autoSuggest(String input) {
+        if (input == null || input.length() < 2) {
+            return List.of(); // En az 2 harf yazılmalı
+        }
+        return searchRepository.autoSuggestProductNames(input);
+    }
 }

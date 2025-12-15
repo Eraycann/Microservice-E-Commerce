@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.Setting;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -17,12 +18,13 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(indexName = "products") // ES'de 'products' isimli bir indeks oluşturur
+@Setting(settingPath = "/es-settings.json") // Ayar dosyasını göster
 public class ProductIndex {
 
     @Id
     private String id; // ES ID'leri String tutar
 
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text, analyzer = "my_custom_analyzer") // Bu analizörü kullan
     private String name; // "Iphone 15" aranınca "Iphone" yazsa da bulsun
 
     @Field(type = FieldType.Text)

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface CustomSearchRepository {
-    // Brand ve Category parametreleri eklendi
+
     List<ProductIndex> searchByFilters(
             String query,
             String brand,
@@ -14,4 +14,8 @@ public interface CustomSearchRepository {
             Double maxPrice,
             Map<String, String> searchSpecs
     );
+
+    // --- YENİ EKLENEN ---
+    // Arama çubuğunda harflere basıldığında öneri sunacak metot
+    List<String> autoSuggestProductNames(String input);
 }
