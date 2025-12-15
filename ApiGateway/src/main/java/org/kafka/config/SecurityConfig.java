@@ -2,7 +2,7 @@ package org.kafka.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // EKLENDİ: GET isteklerini ayırt etmek için
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -17,10 +17,9 @@ import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Mono;
 
 @Configuration
-@EnableWebFluxSecurity // 1. Projenin Reactive (WebFlux) güvenlik modunda çalışacağını belirtir.
+@EnableWebFluxSecurity
 public class SecurityConfig {
 
-    // Logout işlemi sırasında Keycloak bilgilerine erişmek için bu repository'yi inject ediyoruz.
     private final ReactiveClientRegistrationRepository clientRegistrationRepository;
 
     public SecurityConfig(ReactiveClientRegistrationRepository clientRegistrationRepository) {
@@ -30,58 +29,40 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 
-        // 2. XOR SORUNUNU ÇÖZEN HANDLER (OPTİMİZASYON)
-        // Spring Security 6 varsayılan olarak tokenları şifreler (Masking).
-        // Ancak Javascript (SPA) ile çalışırken bu şifreleme uyumsuzluk yaratır (403 hatası).
-        // Bu handler ile "Şifreleme yapma, düz (Raw) token kullan" diyoruz.
+        // XOR SORUNUNU ÇÖZEN HANDLER (Frontend Uyumluluğu)
         ServerCsrfTokenRequestAttributeHandler requestHandler = new ServerCsrfTokenRequestAttributeHandler();
         requestHandler.setTokenFromMultipartDataEnabled(false);
 
         http
                 .csrf(csrf -> csrf
-                        // 3. COOKIE AYARI
-                        // Frontend'in (JS) token'ı okuyup Header'a yazabilmesi için
-                        // HttpOnly özelliğini KAPATIYORUZ (False).
+                        // Token'ı Cookie'ye yaz (HttpOnly False olsun ki JS okuyabilsin)
                         .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
-                        // XOR iptal ayarını buraya bağlıyoruz.
                         .csrfTokenRequestHandler(requestHandler)
                 )
                 .authorizeExchange(exchanges -> exchanges
-                        // 1. Statik Kaynaklar ve Login
+                        // Statik Kaynaklar ve Login
                         .pathMatchers("/", "/login/**", "/oauth2/**", "/public/**", "/favicon.ico").permitAll()
 
-                        // 2. PRODUCT SERVICE - HALKA AÇIK ENDPOINTLER (Sadece GET)
-                        // Controller'larında tanımladığın endpointlere göre:
-
-                        // Ürünleri Listeleme ve Detay (ProductController)
+                        // PUBLIC ENDPOINTLER (Sadece GET istekleri serbest)
                         .pathMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
-
-                        // Kategorileri Listeleme (CategoryController)
                         .pathMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
-
-                        // Markaları Listeleme (BrandController)
                         .pathMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
 
-                        // Not: Image, Stock ve Spec controller'larında sadece PUT, POST, DELETE var. (Product Service mikroservis için)
-                        // Biz yukarıda sadece GET'e izin verdiğimiz için onlar otomatik olarak KORUMALI kalır.
-
-                        // 3. Diğer her şey için Token Şart
+                        // Diğer her yer kilitli
                         .anyExchange().authenticated()
                 )
-                .oauth2Login(Customizer.withDefaults()) // 5. OAuth2 Login akışını başlatır.
+                .oauth2Login(Customizer.withDefaults())
                 .logout(logout -> logout
-                        .logoutUrl("/logout") // POST /logout isteği gelince çıkış yap.
-                        .logoutSuccessHandler(oidcLogoutSuccessHandler()) // Çıkış sonrası Keycloak'a git.
+                        .logoutUrl("/logout")
+                        .logoutSuccessHandler(oidcLogoutSuccessHandler())
                 );
 
         return http.build();
     }
 
-    // 6. WEBFLUX CSRF "LAZY" FİLTRESİ (KRİTİK)
-    // WebFlux performans için CSRF token'ı gerekmedikçe oluşturmaz (Lazy Loading).
-    // Bu filtre, her gelen istekte token'a "abone" (subscribe) olur ve
-    // sunucuyu token üretmeye ve Cookie'ye yazmaya ZORLAR (Eager Loading).
-    // Bu olmazsa, sayfayı ilk açtığında Cookie boş gelir, Logout çalışmaz.
+    // WEBFLUX CSRF "LAZY" FİLTRESİ (KRİTİK)
+    // Gateway'e ilk girişte Cookie'nin oluşmasını garanti eder.
     @Bean
     public WebFilter csrfCookieWebFilter() {
         return (exchange, chain) -> {
@@ -90,15 +71,10 @@ public class SecurityConfig {
         };
     }
 
-    // 7. KEYCLOAK LOGOUT HANDLER
-    // Sadece Gateway'den çıkmak yetmez, Keycloak'tan da çıkmak gerekir (Single Sign-Out).
-    // Bu kod tarayıcıyı Keycloak'ın logout sayfasına yönlendirir.
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
-        OidcClientInitiatedServerLogoutSuccessHandler oidcLogoutSuccessHandler =
+        OidcClientInitiatedServerLogoutSuccessHandler handler =
                 new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
-
-        // Keycloak işini bitirince kullanıcıyı tekrar ana sayfaya ({baseUrl}) geri göndersin.
-        oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}");
-        return oidcLogoutSuccessHandler;
+        handler.setPostLogoutRedirectUri("{baseUrl}");
+        return handler;
     }
 }
