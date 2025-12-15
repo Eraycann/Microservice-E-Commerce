@@ -1,14 +1,18 @@
 package org.kafka.repository;
 
+import co.elastic.clients.elasticsearch._types.FieldValue; // EKLENDİ
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import lombok.RequiredArgsConstructor;
 import org.kafka.model.ProductIndex;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,62 +25,92 @@ public class CustomSearchRepositoryImpl implements CustomSearchRepository {
 
     @Override
     public List<ProductIndex> searchByFilters(
-            String query,
+            String queryText,
             String brand,
             String category,
             Double minPrice,
             Double maxPrice,
             Map<String, String> searchSpecs
     ) {
-        // 1. Temel Kriter: Sadece aktif ürünler
-        Criteria criteria = new Criteria("active").is(true);
+        List<Query> mustQueries = new ArrayList<>();
 
-        // 2. ARAMA KUTUSU MANTIĞI (Full-Text Search)
-        // Eğer kullanıcı bir şey yazdıysa; bunu İsimde VEYA Açıklamada VEYA Markada ararız.
-        if (query != null && !query.trim().isEmpty()) {
-            criteria = criteria.subCriteria(new Criteria()
-                    .or("name").contains(query)
-                    .or("description").contains(query)
-                    .or("brand").contains(query) // Marka isminde de arama yapsın
-                    .or("category").contains(query) // Kategori isminde de arama yapsın
-            );
+        // 1. AKTİF ÜRÜNLER (Zorunlu)
+        // .value(true) -> .value(FieldValue.of(true)) yapmak daha garantidir ama boolean direkt çalışır.
+        mustQueries.add(QueryBuilders.term(t -> t.field("active").value(true)));
+
+        // 2. ARAMA KUTUSU (MultiMatch)
+        if (queryText != null && !queryText.trim().isEmpty()) {
+            mustQueries.add(QueryBuilders.multiMatch(m -> m
+                    .query(queryText)
+                    .fields("name^3", "description", "brand", "category")
+                    .fuzziness("AUTO")
+            ));
         }
 
-        // 3. FİLTRELEME MANTIĞI (Faceted Search)
-
-        // Marka Filtresi (Kesin Eşleşme)
+        // 3. MARKA FİLTRESİ
         if (brand != null && !brand.isEmpty()) {
-            criteria = criteria.and("brand").is(brand);
+            // String değerleri FieldValue.of() içine almak en güvenli yoldur
+            mustQueries.add(QueryBuilders.term(t -> t.field("brand").value(FieldValue.of(brand))));
         }
 
-        // Kategori Filtresi (Kesin Eşleşme)
+        // 4. KATEGORİ FİLTRESİ
         if (category != null && !category.isEmpty()) {
-            criteria = criteria.and("category").is(category);
+            mustQueries.add(QueryBuilders.term(t -> t.field("category").value(FieldValue.of(category))));
         }
 
-        // Fiyat Aralığı
-        if (minPrice != null && maxPrice != null) {
-            criteria = criteria.and("price").between(minPrice, maxPrice);
-        } else if (minPrice != null) {
-            criteria = criteria.and("price").greaterThanEqual(minPrice);
-        } else if (maxPrice != null) {
-            criteria = criteria.and("price").lessThanEqual(maxPrice);
+        // 5. FİYAT ARALIĞI (Range Query) - DÜZELTİLEN KISIM 🛠️
+        if (minPrice != null || maxPrice != null) {
+            mustQueries.add(QueryBuilders.range(r -> r
+                    .number(n -> { // <--- BURASI EKLENDİ (Sayısal aralık olduğunu belirtiyoruz)
+                        n.field("price"); // .field() metodu .number() bloğunun içindedir.
+
+                        if (minPrice != null) n.gte(minPrice); // Double değer alır
+                        if (maxPrice != null) n.lte(maxPrice); // Double değer alır
+
+                        return n;
+                    })
+            ));
         }
 
-        // 4. DİNAMİK ÖZELLİK FİLTRESİ (Specs)
-        // Örn: specs.color = "Blue"
+        // 6. DİNAMİK ÖZELLİKLER (Specs)
         if (searchSpecs != null && !searchSpecs.isEmpty()) {
             for (Map.Entry<String, String> entry : searchSpecs.entrySet()) {
-                criteria = criteria.and("specs." + entry.getKey()).is(entry.getValue());
+                mustQueries.add(QueryBuilders.term(t -> t
+                        .field("specs." + entry.getKey())
+                        .value(FieldValue.of(entry.getValue())) // String -> FieldValue çevrimi
+                ));
             }
         }
 
-        // Sorguyu Çalıştır
-        CriteriaQuery searchCode = new CriteriaQuery(criteria);
-        SearchHits<ProductIndex> searchHits = elasticsearchOperations.search(searchCode, ProductIndex.class);
+        Query finalQuery = QueryBuilders.bool(b -> b.must(mustQueries));
+
+        NativeQuery nativeQuery = NativeQuery.builder()
+                .withQuery(finalQuery)
+                .build();
+
+        SearchHits<ProductIndex> searchHits = elasticsearchOperations.search(nativeQuery, ProductIndex.class);
 
         return searchHits.stream()
                 .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> autoSuggestProductNames(String input) {
+        Query query = QueryBuilders.prefix(p -> p
+                .field("name")
+                .value(input) // Prefix query string kabul eder, sorun yok
+        );
+
+        NativeQuery nativeQuery = NativeQuery.builder()
+                .withQuery(query)
+                .withPageable(PageRequest.of(0, 5))
+                .build();
+
+        SearchHits<ProductIndex> searchHits = elasticsearchOperations.search(nativeQuery, ProductIndex.class);
+
+        return searchHits.stream()
+                .map(hit -> hit.getContent().getName())
                 .collect(Collectors.toList());
     }
 }
