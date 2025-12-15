@@ -43,4 +43,11 @@ public class SearchController {
 
         return ResponseEntity.ok(searchService.filterProducts(query, brand, category, minPrice, maxPrice, specs));
     }
+
+    // --- YENİ ENDPOINT: ÖNERİ SİSTEMİ ---
+    // URL: GET /api/v1/search/suggestions?input=lap
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<String>> getSuggestions(@RequestParam String input) {
+        return ResponseEntity.ok(searchService.autoSuggest(input));
+    }
 }
