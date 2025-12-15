@@ -23,6 +23,9 @@ public class ProductSpecService {
     private final ProductSpecRepository specRepository;
     private final ProductMapper productMapper;
 
+    // Olay Yayıncısı
+    private final SearchEventPublisher searchEventPublisher; // <-- EKLENDİ
+
     /**
      * Belirtilen ürüne ait JSONB spesifikasyon verisini günceller.
      * Bu genellikle tam bir değiştirme işlemidir (replace).
@@ -44,7 +47,11 @@ public class ProductSpecService {
 
         specRepository.save(spec);
 
-        // Güncel Product detaylarını döndür
+        // --- YENİ EKLENEN KISIM ---
+        // Özellikler değişti, Elasticsearch'ü güncelle!
+        searchEventPublisher.sendProductEvent(product, "UPDATE");
+        // ---------------------------
+
         return productMapper.toDetailResponse(product);
     }
 }
