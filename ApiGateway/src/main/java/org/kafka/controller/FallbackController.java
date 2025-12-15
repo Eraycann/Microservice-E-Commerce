@@ -29,8 +29,6 @@ public class FallbackController {
         return Mono.just("⚠️ Sipariş Servisi şu an yanıt veremiyor. Lütfen daha sonra tekrar deneyiniz.");
     }
 
-    // --- YENİ EKLENENLER ---
-
     @GetMapping("/payment")
     public Mono<String> paymentServiceFallback() {
         return Mono.just("⚠️ Ödeme Servisi geçici olarak hizmet dışıdır. Lütfen daha sonra tekrar deneyiniz.");
@@ -38,12 +36,17 @@ public class FallbackController {
 
     @GetMapping("/notification")
     public Mono<String> notificationServiceFallback() {
-        // Bildirim servisi kritik değildir, kullanıcıya hata göstermek yerine loglanabilir veya boş dönülebilir.
         return Mono.just("⚠️ Bildirim tercihleri şu an yüklenemiyor.");
     }
 
     @GetMapping("/feedback")
     public Mono<String> feedbackServiceFallback() {
         return Mono.just("⚠️ Değerlendirme sistemi şu an yanıt veremiyor.");
+    }
+
+    // --- YENİ EKLENEN ---
+    @GetMapping("/search")
+    public Mono<String> searchServiceFallback() {
+        return Mono.just("⚠️ Arama servisi şu an geçici olarak hizmet veremiyor.");
     }
 }
