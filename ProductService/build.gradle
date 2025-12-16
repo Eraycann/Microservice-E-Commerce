@@ -1,15 +1,45 @@
 dependencies {
+    // -------------------------------------------------------------
+    // 1. WEB & API (Controller, Swagger)
+    // -------------------------------------------------------------
     implementation libs.springBootStarterWeb
+    implementation libs.swaggerui
+
+    // -------------------------------------------------------------
+    // 2. VERİTABANI KATMANI (PostgreSQL, JPA)
+    // -------------------------------------------------------------
     implementation libs.springBootDataJpa
     implementation libs.postgreSQL
-    implementation libs.springCloudEurekaClient
-    implementation libs.springSecurityOAuth2ResourceServer
+    implementation libs.hypersistenceUtils // JSONB gibi gelişmiş tipler için
+
+    // -------------------------------------------------------------
+    // 3. MİKROSERVİS İLETİŞİMİ (Sync & Async)
+    // -------------------------------------------------------------
+    implementation libs.springCloudEurekaClient      // Service Discovery
+    implementation libs.springCloudStarterOpenFeign  // HTTP (Senkron) İletişim (Product/Payment çağırmak için)
+    implementation libs.springBootStarterAmqp        // RabbitMQ (Asenkron) İletişim (Event fırlatmak için)
+
+    // -------------------------------------------------------------
+    // 4. GÜVENLİK (OAuth2 & Keycloak)
+    // -------------------------------------------------------------
     implementation libs.springSecurityConfig
-    implementation libs.mapStruct
-    implementation libs.swaggerui
+    implementation libs.springSecurityOAuth2ResourceServer
+
+    // -------------------------------------------------------------
+    // 5. BULUT & DOSYA (AWS S3)
+    // -------------------------------------------------------------
     implementation libs.awsSdkS3
-    implementation libs.hypersistenceUtils
-    compileOnly libs.lombok
+
+    // -------------------------------------------------------------
+    // 6. ARAÇLAR & UTILS (Mapper, JSON, Lombok)
+    // -------------------------------------------------------------
+    implementation libs.mapStruct               // DTO <-> Entity dönüşümü
+    implementation libs.jacksonDatatypeJsr310   // Tarih formatlama (LocalDate vb. için)
+    compileOnly libs.lombok                     // Kod kısaltma
+
+    // -------------------------------------------------------------
+    // 7. ANNOTATION PROCESSORS (Derleme Zamanı İşlemleri)
+    // -------------------------------------------------------------
     annotationProcessor libs.lombok
     annotationProcessor libs.mapStructProcessor
 }

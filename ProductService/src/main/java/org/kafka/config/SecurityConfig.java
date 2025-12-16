@@ -3,21 +3,22 @@ package org.kafka.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod; // <--- BU EKLENDİ
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @Configuration
 @EnableWebSecurity
@@ -27,16 +28,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Mikroservisler arası zaten token var, session yok.
+                .csrf(AbstractHttpConfigurer::disable) // CSRF devre dışı
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().authenticated() // Her istekte token olmalı
+                        // --- 1. HALKA AÇIK ENDPOINTLER (Public) ---
+                        // Ürün, Kategori ve Marka listeleme/detay işlemleri herkese açık
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
+
+                        // Swagger UI ve API Docs (Geliştirme ortamı için)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // Actuator (Sağlık kontrolleri)
+                        .requestMatchers("/actuator/**").permitAll()
+
+                        // --- 2. KİLİTLİ ALANLAR (Protected) ---
+                        // Geri kalan tüm istekler (POST, PUT, DELETE vb.) Token gerektirir.
+                        .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
+                        // Token içindeki rolleri okumak için converter'ı bağlıyoruz
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 );
 
         return http.build();
     }
+
+    // --- AŞAĞISI AYNEN KORUNDU ---
 
     // Keycloak "roles" claim'ini Spring Security yetkilerine çevirir
     private Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
@@ -50,8 +68,7 @@ public class SecurityConfig {
 class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
-        // Keycloak'ta mapper ile "roles" claim'ine rolleri eklediğimiz varsayılıyor.
-        // Eğer mapper yapmadıysanız "realm_access" içindeki "roles" kısmına bakmalısınız.
+        // Keycloak'ta "realm_access" içindeki "roles" kısmına bakıyoruz
         Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
 
         if (realmAccess == null || realmAccess.isEmpty()) {

@@ -22,4 +22,8 @@ dependencies {
     annotationProcessor libs.lombok
     implementation libs.mapStruct
     annotationProcessor libs.mapStructProcessor
+
+    // --- FEIGN CLIENT (YENİ) ---
+    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    implementation libs.springCloudStarterOpenFeign
 }

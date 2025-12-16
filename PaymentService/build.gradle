@@ -1,0 +1,15 @@
+dependencies {
+    implementation libs.springBootStarterWeb
+    implementation libs.springBootDataJpa
+    implementation libs.postgreSQL
+    implementation libs.springCloudEurekaClient
+    implementation libs.springSecurityOAuth2ResourceServer
+    // implementation libs.springSecurityConfig (Gerekirse)
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+
+    // --- FEIGN CLIENT (YENİ) ---
+    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    implementation libs.springCloudStarterOpenFeign
+}

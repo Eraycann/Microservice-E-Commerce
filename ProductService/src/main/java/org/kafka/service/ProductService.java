@@ -30,13 +30,16 @@ public class ProductService {
     private final DomainHelper domainHelper;
     private final ProductMapper productMapper;
 
+    // --- YENİ EKLENEN ---
+    private final SearchEventPublisher searchEventPublisher;
+
     // --- CREATE ---
 
     /**
      * Yeni ürün oluşturur, resimleri S3'e yükler ve ilişkili entityleri (Inventory, Spec, Image) başlatır.
      */
     @Transactional
-    public ProductDetailResponseDto createProduct(ProductCreateRequestDto request,
+    public ProductDetailResponseDto  createProduct(ProductCreateRequestDto request,
                                                   List<MultipartFile> images) {
 
         // 1. Kategori ve Marka Doğrulama (MasterDataClient ile)
@@ -59,12 +62,18 @@ public class ProductService {
         product.setInventory(createInitialInventory(product, request.getInitialStockCount()));
         product.setSpecs(createInitialSpecs(product, request.getSpecsData()));
 
+        // ... (Mevcut create işlemleri - validation, saving vs. AYNEN KALIYOR) ...
+        // ...
         // 5. Kaydetme
         Product savedProduct = productRepository.save(product);
 
-        // 6. Resimlerin S3'e Yüklenmesi ve ProductImage Entity'lerinin oluşturulması
+        // 6. Resimlerin S3'e Yüklenmesi
         List<ProductImage> imageEntities = uploadAndMapImages(savedProduct, images);
         savedProduct.setImages(imageEntities);
+
+        // Veritabanı işlemi bitti, şimdi Search Service'e haber verelim.
+        // --- YENİ EKLENEN ---
+        searchEventPublisher.sendProductEvent(savedProduct, "CREATE");
 
         return productMapper.toDetailResponse(savedProduct);
     }
@@ -126,7 +135,14 @@ public class ProductService {
         // 3. Temel Alan Güncellemeleri
         productMapper.updateEntity(product, request);
 
-        return productMapper.toDetailResponse(productRepository.save(product));
+        // ... (Mevcut update mantığı AYNEN KALIYOR) ...
+
+        Product updatedProduct = productRepository.save(product);
+
+        // --- YENİ EKLENEN ---
+        searchEventPublisher.sendProductEvent(updatedProduct, "UPDATE");
+
+        return productMapper.toDetailResponse(updatedProduct);
     }
 
     // --- DELETE ---
@@ -141,6 +157,10 @@ public class ProductService {
 
         // Product silinince, cascade ile bağlı Inventory, Spec ve ProductImage kayıtları da silinir.
         productRepository.delete(product);
+
+        // --- YENİ EKLENEN ---
+        // Silinen ürünün verilerini (ID'si önemli) gönderiyoruz
+        searchEventPublisher.sendProductEvent(product, "DELETE");
     }
 
     // --- INTERNAL YARDIMCI METOTLAR ---

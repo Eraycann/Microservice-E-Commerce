@@ -24,6 +24,7 @@ public class ProductInventoryService {
     private final ProductRepository productRepository;
     private final ProductInventoryRepository inventoryRepository;
     private final ProductMapper productMapper;
+    private final SearchEventPublisher searchEventPublisher; // <-- EKLENDİ
 
     /**
      * Belirtilen ürüne ait stoğu verilen delta kadar günceller.
@@ -51,15 +52,64 @@ public class ProductInventoryService {
             throw new BaseDomainException(ProductErrorCode.STOCK_CANNOT_BE_NEGATIVE);
         }
 
-        // Güncelleme
+        // ... Stok hesaplama işlemleri ...
         inventory.setStockCount(newStock);
         inventory.setLastUpdated(LocalDateTime.now());
 
-        // Inventory entity'si Product'a bağlı olduğu için, productRepository.save(product) çağrılabilir.
-        // Ancak InventoryRepository'yi kullanmak da transaction kapsamında geçerlidir.
         inventoryRepository.save(inventory);
 
-        // Güncel Product detaylarını döndür
+        // --- YENİ EKLENEN KISIM ---
+        // Stok değişti, Elasticsearch'ü güncelle!
+        searchEventPublisher.sendProductEvent(product, "UPDATE");
+        // ---------------------------
+
         return productMapper.toDetailResponse(product);
+    }
+
+    /**
+     * SAGA: Order Service tarafından çağrılır.
+     * Stoğu güvenli ve atomik bir şekilde düşürür.
+     */
+    @Transactional
+    public void reduceStock(Long productId, Integer quantity) {
+        // 1. Ürün var mı kontrolü
+        if (!productRepository.existsById(productId)) {
+            throw new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // 2. Atomik güncelleme (DB seviyesinde)
+        int updatedRows = inventoryRepository.reduceStock(productId, quantity);
+
+        // 3. Yetersiz stok kontrolü
+        if (updatedRows == 0) {
+            throw new BaseDomainException(ProductErrorCode.INSUFFICIENT_STOCK);
+        }
+
+        // 4. 🚀 EVENT: Stok düştü, Elasticsearch güncellenmeli!
+        // Not: reduceStock native query olduğu için entity context güncellenmemiş olabilir.
+        // En güncel veriyi (yeni stoğu) çekip gönderiyoruz.
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        searchEventPublisher.sendProductEvent(product, "UPDATE");
+    }
+
+    /**
+     * SAGA ROLLBACK: Sipariş iptal olursa stok iade edilir.
+     */
+    @Transactional
+    public void restoreStock(Long productId, Integer quantity) {
+        if (!productRepository.existsById(productId)) {
+            throw new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        // 1. Stoğu iade et
+        inventoryRepository.restoreStock(productId, quantity);
+
+        // 2. 🚀 EVENT: Stok arttı (iade), Elasticsearch güncellenmeli!
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        searchEventPublisher.sendProductEvent(product, "UPDATE");
     }
 }

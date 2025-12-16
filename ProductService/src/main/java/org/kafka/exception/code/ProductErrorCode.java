@@ -19,7 +19,7 @@ public enum ProductErrorCode implements BaseErrorCode {
     BRAND_NOT_FOUND("PROD-1004", "Marka bulunamadı.", HttpStatus.NOT_FOUND),
     CATEGORY_HAS_ACTIVE_PRODUCTS("PROD-1005", "Bu kategoriye bağlı aktif ürünler olduğu için silinemez.", HttpStatus.BAD_REQUEST),
     PARENT_CATEGORY_NOT_FOUND("PROD-1006", "Belirtilen üst kategori mevcut değil.", HttpStatus.NOT_FOUND),
-    CATEGORY_CANNOT_BE_ITS_OWN_PARENT("PROD-1007", "Bir kategori kendi üst kategorası olamaz.", HttpStatus.BAD_REQUEST),
+    CATEGORY_CANNOT_BE_ITS_OWN_PARENT("PROD-1007", "Bir kategori kendi üst kategorisi olamaz.", HttpStatus.BAD_REQUEST),
     CATEGORY_SLUG_ALREADY_EXISTS("PROD-1008", "Belirtilen kategori adı zaten mevcut (Slug çakışması).", HttpStatus.CONFLICT),
     CATEGORY_HAS_CHILDREN("PROD-1009", "Bu kategori alt kategorilere sahip olduğu için silinemez.", HttpStatus.BAD_REQUEST),
     BRAND_SLUG_ALREADY_EXISTS("PROD-1014", "Belirtilen marka adı zaten mevcut (Slug çakışması).", HttpStatus.CONFLICT),
@@ -38,10 +38,12 @@ public enum ProductErrorCode implements BaseErrorCode {
     SPECS_NOT_FOUND("PROD-1017", "Ürüne ait teknik özellikler bulunamadı.", HttpStatus.NOT_FOUND),
 
     // --- Resim (Image) Hataları ---
+
     INVALID_IMAGE_FILE("PROD-1018", "Geçersiz resim dosyası.", HttpStatus.BAD_REQUEST),
     IMAGE_NOT_FOUND("PROD-1019", "Ürün resmi bulunamadı.", HttpStatus.NOT_FOUND),
     NO_MAIN_IMAGE_SPECIFIED("PROD-1020", "Ana resim belirtilmedi.", HttpStatus.BAD_REQUEST),
     FILE_UPLOAD_FAILED("PROD-1021", "Dosya yükleme işlemi başarısız oldu.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CANNOT_DELETE_MAIN_IMAGE("PROD-1022", "Ana resim silinemez. Lütfen önce başka bir resmi ana resim olarak ayarlayın.", HttpStatus.BAD_REQUEST),
 
     // --- Genel Hatalar (5xx) ---
 
