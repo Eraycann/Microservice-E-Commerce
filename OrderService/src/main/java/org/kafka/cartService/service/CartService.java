@@ -22,46 +22,54 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final ProductServiceClient productServiceClient;
-    private final CartEventPublisher cartEventPublisher; // Inject Edildi
+    private final CartEventPublisher cartEventPublisher;
 
     private static final int MAX_ITEM_QUANTITY = 99;
 
-    public Cart getCart(String userId) {
-        return cartRepository.findByUserId(userId)
+    /**
+     * Redis Key'ini kullanarak sepeti getirir.
+     * key: "user-uuid" veya "guest:guest-uuid" olabilir.
+     */
+    public Cart getCart(String key) {
+        return cartRepository.findByUserId(key)
                 .orElseGet(() -> Cart.builder()
-                        .userId(userId)
+                        .userId(key)
                         .items(new ArrayList<>())
                         .totalCartPrice(BigDecimal.ZERO)
                         .build());
     }
 
-    public Cart addItemToCart(String userId, CartItemRequestDto request) {
-        // 0. Miktar Geçerliliği Kontrolü (CART-1002)
+    /**
+     * Sepete ürün ekler.
+     * Hem Login olmuş (userId) hem Misafir (guestId) durumunu yönetir.
+     */
+    public Cart addItemToCart(String userId, String guestId, CartItemRequestDto request) {
+        // 0. Miktar Geçerliliği Kontrolü
         if (request.getQuantity() == null || request.getQuantity() <= 0) {
             throw new BaseDomainException(CartErrorCode.INVALID_CART_QUANTITY);
         }
 
-        // 1. Mevcut sepeti çek veya yeni oluştur
-        Cart cart = getCart(userId);
+        // 1. Redis Key Belirleme (Target ID)
+        // Eğer login ise ID'yi kullan, değilse "guest:" prefix'i ile guestId kullan.
+        String targetCartId = (userId != null) ? userId : "guest:" + guestId;
 
-        // 2. ProductService'ten güncel veriyi (Snapshot) al
-        // NOT: Feign Client'ta, eğer ProductService 404 dönerse, bu hatayı yakalayıp
-        // CART-2001'e dönüştürecek bir ErrorDecoder'ınız olmalıdır.
+        // 2. Mevcut sepeti çek veya yeni oluştur
+        Cart cart = getCart(targetCartId);
+
+        // 3. ProductService'ten güncel veriyi (Snapshot) al
         ProductCartDetailDto productDto;
         try {
             productDto = productServiceClient.getProductForCart(request.getProductId());
         } catch (Exception e) {
-            // Eğer Feign, ProductService'e ulaşamazsa veya 5xx hatası alırsa
             throw new BaseDomainException(CartErrorCode.PRODUCT_SERVICE_COMMUNICATION_ERROR);
         }
 
-        // 3. Stok Kontrolü (Basit) (CART-2002)
+        // 4. Stok Kontrolü
         if (productDto.getStockCount() < request.getQuantity()) {
-            // Yetersiz stok uyarısı
             throw new BaseDomainException(CartErrorCode.PRODUCT_SERVICE_INSUFFICIENT_STOCK);
         }
 
-        // 4. Ürün sepette zaten var mı?
+        // 5. Ürün sepette zaten var mı?
         Optional<CartItem> existingItem = cart.getItems().stream()
                 .filter(item -> item.getProductId().equals(productDto.getId()))
                 .findFirst();
@@ -69,21 +77,19 @@ public class CartService {
         int finalQuantity;
 
         if (existingItem.isPresent()) {
-            // Varsa miktarını artır
+            // Varsa güncelle
             CartItem item = existingItem.get();
             finalQuantity = item.getQuantity() + request.getQuantity();
 
-            // Maksimum miktar kontrolü (CART-1003)
             if (finalQuantity > MAX_ITEM_QUANTITY) {
                 throw new BaseDomainException(CartErrorCode.PRODUCT_QUANTITY_EXCEEDS_MAX);
             }
 
-            // Güncelleme
             item.setQuantity(finalQuantity);
-            item.setPrice(productDto.getPrice()); // Fiyat güncellemesi
+            item.setPrice(productDto.getPrice());
             item.setTotalItemPrice(item.getPrice().multiply(BigDecimal.valueOf(finalQuantity)));
         } else {
-            // Yoksa yeni item oluştur
+            // Yoksa ekle
             finalQuantity = request.getQuantity();
             if (finalQuantity > MAX_ITEM_QUANTITY) {
                 throw new BaseDomainException(CartErrorCode.PRODUCT_QUANTITY_EXCEEDS_MAX);
@@ -95,31 +101,32 @@ public class CartService {
                     .productSlug(productDto.getSlug())
                     .imageUrl(productDto.getMainImageUrl())
                     .quantity(finalQuantity)
-                    .price(productDto.getPrice()) // SNAPSHOT ALINIYOR
+                    .price(productDto.getPrice())
                     .totalItemPrice(productDto.getPrice().multiply(BigDecimal.valueOf(finalQuantity)))
                     .build();
             cart.getItems().add(newItem);
         }
 
-        // 5. Sepet Toplamını Yeniden Hesapla
+        // 6. Hesapla ve Kaydet
         calculateCartTotal(cart);
-
-        // 6. Redis'e Kaydet
         cartRepository.save(cart);
 
-        // --- YENİ: RECOMMENDATION SERVICE'E HABER VER ---
-        // Ürün ID'si Long ise String'e çeviriyoruz
-        cartEventPublisher.publishAddToCartEvent(userId, String.valueOf(request.getProductId()));
+        // --- DÜZELTME: RECOMMENDATION SERVICE HABERLEŞMESİ ---
+        // Artık hem userId hem guestId gönderiyoruz. Publisher bunu bekliyor.
+        cartEventPublisher.publishAddToCartEvent(
+                userId,
+                guestId,
+                String.valueOf(request.getProductId())
+        );
 
         return cart;
     }
 
-    public void removeItemFromCart(String userId, Long productId) {
-        Cart cart = getCart(userId);
+    public void removeItemFromCart(String cartId, Long productId) {
+        Cart cart = getCart(cartId);
 
         boolean removed = cart.getItems().removeIf(item -> item.getProductId().equals(productId));
 
-        // Sepet öğesi bulunamazsa hata fırlat (CART-1001)
         if (!removed) {
             throw new BaseDomainException(CartErrorCode.CART_ITEM_NOT_FOUND);
         }
@@ -128,8 +135,8 @@ public class CartService {
         cartRepository.save(cart);
     }
 
-    public void clearCart(String userId) {
-        cartRepository.delete(userId);
+    public void clearCart(String cartId) {
+        cartRepository.delete(cartId);
     }
 
     private void calculateCartTotal(Cart cart) {
@@ -140,33 +147,39 @@ public class CartService {
     }
 
     public void mergeCarts(String guestCartId, String userCartId) {
-        // 1. Misafir sepetini bul
+        // 1. Misafir sepetini bul (Redis Key: "guest:UUID")
         Optional<Cart> guestCartOpt = cartRepository.findByUserId(guestCartId);
 
         if (guestCartOpt.isEmpty() || guestCartOpt.get().getItems().isEmpty()) {
-            return; // Birleştirilecek bir şey yok
+            // Sepet boş olsa bile, Recommendation tarafında "Geçmişi Birleştir" demek isteyebiliriz.
+            // Ama genelde sepet boşsa kullanıcı hiçbir şey yapmamış demektir, pas geçebiliriz.
+            // İsteğe bağlı olarak event fırlatmayı dışarı alabilirsin.
+            return;
         }
 
         Cart guestCart = guestCartOpt.get();
 
-        // 2. Misafir sepetindeki her ürünü, sanki kullanıcı yeni ekliyormuş gibi ekle.
-        // Bu sayede "addItemToCart" içindeki stok kontrolü, fiyat güncellemesi ve miktar artırma (x + y)
-        // mantıklarını tekrar yazmamıza gerek kalmaz.
+        // 2. Birleştirme (Sepet Ürünleri)
         for (CartItem guestItem : guestCart.getItems()) {
             CartItemRequestDto requestDto = new CartItemRequestDto();
             requestDto.setProductId(guestItem.getProductId());
             requestDto.setQuantity(guestItem.getQuantity());
 
             try {
-                addItemToCart(userCartId, requestDto);
+                // Sepete eklerken guestId = null gönderiyoruz, çünkü hedef User.
+                addItemToCart(userCartId, null, requestDto);
             } catch (Exception e) {
-                // Stok yetersizse veya ürün artık yoksa, o ürünü atla ama işlemi durdurma.
-                // Log basılabilir.
                 System.err.println("Merge sırasında ürün eklenemedi: " + guestItem.getProductId());
             }
         }
 
-        // 3. Misafir sepetini sil (Artık birleşti)
+        // 3. Misafir sepetini Redis'ten sil
         cartRepository.delete(guestCartId);
+
+        // 4. RECOMMENDATION SERVICE'E HABER VER (YENİ)
+        // guestCartId "guest:550e..." şeklinde geliyor. Prefix'i temizleyip gönderiyoruz.
+        String rawGuestId = guestCartId.replace("guest:", "");
+
+        cartEventPublisher.publishMergeEvent(rawGuestId, userCartId);
     }
 }

@@ -13,8 +13,17 @@ public class RabbitMQConfig {
 
     // --- 1. Recommendation İçin (User Activity) ---
     public static final String ACTIVITY_EXCHANGE = "user.activity.exchange";
-    // Recommendation servisi "interaction.#" dinlediği için bu key ile gönderirsek yakalar.
+
+    // Satın alma etkileşimi
     public static final String ROUTING_KEY_PURCHASE = "interaction.purchase";
+
+    // Sepete Ekleme
+    public static final String ROUTING_KEY_CART_ADD = "interaction.cart.add";
+
+    // --- YENİ EKLENEN: MERGE İŞLEMİ ---
+    // Recommendation servisi "interaction.#" dinlediği için bu da oraya gider.
+    public static final String ROUTING_KEY_USER_MERGE = "interaction.user.merge";
+
 
     // --- 2. Search & Notification İçin (Order Events) ---
     public static final String ORDER_EXCHANGE = "order.exchange";

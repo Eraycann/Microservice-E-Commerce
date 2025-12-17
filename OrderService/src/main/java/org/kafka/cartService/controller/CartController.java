@@ -16,13 +16,18 @@ public class CartController {
 
     private final CartService cartService;
 
-    // Yardımcı Metot: Kullanıcı mı Misafir mi karar ver
-    private String resolveCartId(Jwt jwt, String guestId) {
+    /**
+     * Yardımcı Metot: Redis Key'ini belirler.
+     * Service katmanındaki "addItemToCart" mantığıyla aynı olmalıdır.
+     * Login ise -> "user-id"
+     * Misafir ise -> "guest:guest-id"
+     */
+    private String getTargetCartId(Jwt jwt, String guestId) {
         if (jwt != null) {
-            return jwt.getClaimAsString("sub"); // Giriş yapmış kullanıcı ID'si
+            return jwt.getClaimAsString("sub");
         }
         if (guestId != null && !guestId.isEmpty()) {
-            return guestId; // Misafir UUID'si
+            return "guest:" + guestId; // Service'teki kayıt formatına uyması için prefix ekledik
         }
         throw new RuntimeException("Kimlik doğrulanamadı: Ne Token var ne de Guest-ID!");
     }
@@ -32,18 +37,24 @@ public class CartController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "X-Guest-Id", required = false) String guestId) {
 
-        String cartId = resolveCartId(jwt, guestId);
+        // Redis'ten okurken doğru key formatını oluşturuyoruz
+        String cartId = getTargetCartId(jwt, guestId);
         return ResponseEntity.ok(cartService.getCart(cartId));
     }
 
+    // --- HATANIN ÇÖZÜLDÜĞÜ YER ---
     @PostMapping("/items")
     public ResponseEntity<Cart> addItem(
             @AuthenticationPrincipal Jwt jwt,
             @RequestHeader(value = "X-Guest-Id", required = false) String guestId,
             @RequestBody CartItemRequestDto request) {
 
-        String cartId = resolveCartId(jwt, guestId);
-        return ResponseEntity.ok(cartService.addItemToCart(cartId, request));
+        // UserId'yi JWT'den güvenli şekilde al (Yoksa null)
+        String userId = (jwt != null) ? jwt.getClaimAsString("sub") : null;
+
+        // Servis katmanına ARTIK 3 PARAMETRE gönderiyoruz.
+        // Servis; hem Redis kaydını hem de RabbitMQ event'ini buna göre ayarlayacak.
+        return ResponseEntity.ok(cartService.addItemToCart(userId, guestId, request));
     }
 
     @DeleteMapping("/items/{productId}")
@@ -52,12 +63,23 @@ public class CartController {
             @RequestHeader(value = "X-Guest-Id", required = false) String guestId,
             @PathVariable Long productId) {
 
-        String cartId = resolveCartId(jwt, guestId);
+        // Silme işlemi için doğru Redis Key'ini bul
+        String cartId = getTargetCartId(jwt, guestId);
         cartService.removeItemFromCart(cartId, productId);
         return ResponseEntity.noContent().build();
     }
 
-    // --- YENİ: LOGIN OLUNCA ÇAĞRILACAK MERGE ENDPOINT ---
+    @DeleteMapping
+    public ResponseEntity<Void> clearCart(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Guest-Id", required = false) String guestId) {
+
+        String cartId = getTargetCartId(jwt, guestId);
+        cartService.clearCart(cartId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- LOGIN OLUNCA ÇAĞRILACAK MERGE ENDPOINT ---
     @PostMapping("/merge")
     public ResponseEntity<Void> mergeCarts(
             @AuthenticationPrincipal Jwt jwt,
@@ -67,8 +89,11 @@ public class CartController {
             throw new RuntimeException("Birleştirme işlemi için giriş yapmalısınız!");
         }
 
-        // Misafir sepetini -> Kullanıcı sepetine aktar
-        cartService.mergeCarts(guestId, jwt.getClaimAsString("sub"));
+        // Misafir sepeti ID'si "guest:" ile başlar
+        String guestCartKey = "guest:" + guestId;
+        String userCartKey = jwt.getClaimAsString("sub");
+
+        cartService.mergeCarts(guestCartKey, userCartKey);
         return ResponseEntity.ok().build();
     }
 }
