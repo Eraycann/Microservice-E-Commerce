@@ -90,8 +90,13 @@ public class UserController {
 
     // Ürün Detayına girince çağrılır
     @PostMapping("/history/{productId}")
-    public void addHistory(@AuthenticationPrincipal Jwt jwt, @PathVariable String productId) {
-        userActivityService.addProductToHistory(jwt.getClaimAsString("sub"), productId);
+    public void addHistory(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Guest-Id", required = false) String guestId, // 1. Header'dan Guest ID okuyoruz
+            @PathVariable String productId
+    ) {
+        // 2. Artık 3 parametre gönderiyoruz: UserId, GuestId, ProductId
+        userActivityService.addProductToHistory(jwt.getClaimAsString("sub"), guestId, productId);
     }
 
     // Geçmiş listesini döner

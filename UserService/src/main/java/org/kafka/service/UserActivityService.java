@@ -18,30 +18,41 @@ import java.util.List;
 public class UserActivityService {
 
     private final StringRedisTemplate redisTemplate;
-    private final RabbitTemplate rabbitTemplate; // Inject ettik
+    private final RabbitTemplate rabbitTemplate;
 
     private static final String HISTORY_KEY_PREFIX = "user:history:";
     private static final int MAX_HISTORY_SIZE = 10;
     private static final Duration TTL = Duration.ofDays(30);
 
     /**
-     * Hem Redis'i günceller hem de Recommendation Service'e haber uçurur.
+     * Kullanıcının baktığı ürünleri kaydeder.
+     * 1. Redis: Sadece login olmuş kullanıcılar için "Son Gezilenler" listesini günceller.
+     * 2. RabbitMQ: Hem login hem guest kullanıcılar için Recommendation servisine veri atar.
+     *
+     * @param userId  Keycloak ID (Login ise dolu, değilse null)
+     * @param guestId Misafir ID (Header'dan gelir)
+     * @param productId Ürün ID
      */
-    public void addProductToHistory(String keycloakId, String productId) {
+    public void addProductToHistory(String userId, String guestId, String productId) {
+
         // --- 1. REDIS İŞLEMİ (UI İÇİN - SENKRON) ---
-        String key = HISTORY_KEY_PREFIX + keycloakId;
-        redisTemplate.opsForList().remove(key, 1, productId);
-        redisTemplate.opsForList().leftPush(key, productId);
-        redisTemplate.opsForList().trim(key, 0, MAX_HISTORY_SIZE - 1);
-        redisTemplate.expire(key, TTL);
+        // Sadece login olmuş kullanıcılar için UI geçmişi tutuyoruz.
+        if (userId != null) {
+            String key = HISTORY_KEY_PREFIX + userId;
+            redisTemplate.opsForList().remove(key, 1, productId); // Varsa eskisini sil (üste taşımak için)
+            redisTemplate.opsForList().leftPush(key, productId);  // En başa ekle
+            redisTemplate.opsForList().trim(key, 0, MAX_HISTORY_SIZE - 1); // Boyutu koru
+            redisTemplate.expire(key, TTL);
+        }
 
         // --- 2. RABBITMQ İŞLEMİ (AI İÇİN - ASENKRON/FIRE-AND-FORGET) ---
-        // Burada hata olursa kullanıcıyı bekletmemeli veya işlemi durdurmamalıyız.
+        // Misafir verisi de model eğitimi için kritiktir. userId null olsa bile gönderiyoruz.
         try {
             UserInteractionEvent event = new UserInteractionEvent(
-                    keycloakId,
+                    userId,     // Login değilse null gidebilir
+                    guestId,    // Misafir ID (Login olsa bile front-end gönderebilir)
                     productId,
-                    "VIEW", // Olay Tipi: Görüntüleme
+                    "VIEW",     // Olay Tipi: Görüntüleme
                     System.currentTimeMillis()
             );
 
@@ -51,11 +62,11 @@ public class UserActivityService {
                     event
             );
 
-            log.debug("👀 VIEW Event fırlatıldı: User={}, Product={}", keycloakId, productId);
+            log.debug("👀 VIEW Event fırlatıldı: User={}, Guest={}, Product={}", userId, guestId, productId);
 
         } catch (Exception e) {
             log.error("❌ Recommendation event hatası: {}", e.getMessage());
-            // Exception'ı yutuyoruz, çünkü bu loglama ana akışı (Redis kaydını) bozmamalı.
+            // Exception'ı yutuyoruz, çünkü bu loglama ana akışı (Redis/Response) bozmamalı.
         }
     }
 
