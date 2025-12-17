@@ -138,4 +138,35 @@ public class CartService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         cart.setTotalCartPrice(total);
     }
+
+    public void mergeCarts(String guestCartId, String userCartId) {
+        // 1. Misafir sepetini bul
+        Optional<Cart> guestCartOpt = cartRepository.findByUserId(guestCartId);
+
+        if (guestCartOpt.isEmpty() || guestCartOpt.get().getItems().isEmpty()) {
+            return; // Birleştirilecek bir şey yok
+        }
+
+        Cart guestCart = guestCartOpt.get();
+
+        // 2. Misafir sepetindeki her ürünü, sanki kullanıcı yeni ekliyormuş gibi ekle.
+        // Bu sayede "addItemToCart" içindeki stok kontrolü, fiyat güncellemesi ve miktar artırma (x + y)
+        // mantıklarını tekrar yazmamıza gerek kalmaz.
+        for (CartItem guestItem : guestCart.getItems()) {
+            CartItemRequestDto requestDto = new CartItemRequestDto();
+            requestDto.setProductId(guestItem.getProductId());
+            requestDto.setQuantity(guestItem.getQuantity());
+
+            try {
+                addItemToCart(userCartId, requestDto);
+            } catch (Exception e) {
+                // Stok yetersizse veya ürün artık yoksa, o ürünü atla ama işlemi durdurma.
+                // Log basılabilir.
+                System.err.println("Merge sırasında ürün eklenemedi: " + guestItem.getProductId());
+            }
+        }
+
+        // 3. Misafir sepetini sil (Artık birleşti)
+        cartRepository.delete(guestCartId);
+    }
 }

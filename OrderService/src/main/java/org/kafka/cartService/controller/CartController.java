@@ -16,26 +16,59 @@ public class CartController {
 
     private final CartService cartService;
 
+    // Yardımcı Metot: Kullanıcı mı Misafir mi karar ver
+    private String resolveCartId(Jwt jwt, String guestId) {
+        if (jwt != null) {
+            return jwt.getClaimAsString("sub"); // Giriş yapmış kullanıcı ID'si
+        }
+        if (guestId != null && !guestId.isEmpty()) {
+            return guestId; // Misafir UUID'si
+        }
+        throw new RuntimeException("Kimlik doğrulanamadı: Ne Token var ne de Guest-ID!");
+    }
 
     @GetMapping
-    public ResponseEntity<Cart> getCart(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(cartService.getCart(jwt.getClaimAsString("sub")));
+    public ResponseEntity<Cart> getCart(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Guest-Id", required = false) String guestId) {
+
+        String cartId = resolveCartId(jwt, guestId);
+        return ResponseEntity.ok(cartService.getCart(cartId));
     }
 
     @PostMapping("/items")
-    public ResponseEntity<Cart> addItem(@AuthenticationPrincipal Jwt jwt, @RequestBody CartItemRequestDto request) {
-        return ResponseEntity.ok(cartService.addItemToCart(jwt.getClaimAsString("sub"), request));
+    public ResponseEntity<Cart> addItem(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Guest-Id", required = false) String guestId,
+            @RequestBody CartItemRequestDto request) {
+
+        String cartId = resolveCartId(jwt, guestId);
+        return ResponseEntity.ok(cartService.addItemToCart(cartId, request));
     }
 
     @DeleteMapping("/items/{productId}")
-    public ResponseEntity<Void> removeItem(@AuthenticationPrincipal Jwt jwt, @PathVariable Long productId) {
-        cartService.removeItemFromCart(jwt.getClaimAsString("sub"), productId);
+    public ResponseEntity<Void> removeItem(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Guest-Id", required = false) String guestId,
+            @PathVariable Long productId) {
+
+        String cartId = resolveCartId(jwt, guestId);
+        cartService.removeItemFromCart(cartId, productId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> clearCart(@AuthenticationPrincipal Jwt jwt) {
-        cartService.clearCart(jwt.getClaimAsString("sub"));
-        return ResponseEntity.noContent().build();
+    // --- YENİ: LOGIN OLUNCA ÇAĞRILACAK MERGE ENDPOINT ---
+    @PostMapping("/merge")
+    public ResponseEntity<Void> mergeCarts(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam String guestId) {
+
+        if (jwt == null) {
+            throw new RuntimeException("Birleştirme işlemi için giriş yapmalısınız!");
+        }
+
+        // Misafir sepetini -> Kullanıcı sepetine aktar
+        cartService.mergeCarts(guestId, jwt.getClaimAsString("sub"));
+        return ResponseEntity.ok().build();
     }
 }
