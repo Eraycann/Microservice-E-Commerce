@@ -8,12 +8,7 @@ import java.util.List;
 
 public interface UserInteractionRepository extends MongoRepository<UserInteraction, String> {
 
-    // MongoDB Aggregation Pipeline:
-    // 1. productId'ye göre grupla.
-    // 2. Her grubu say (count).
-    // 3. Sayıya göre tersten sırala (En çoktan en aza).
-    // 4. İlk 10 tanesini al.
-    // 5. Sadece _id (yani productId) alanını dön.
+    // Popüler Ürünler (En çok etkileşim alanlar)
     @Aggregation(pipeline = {
             "{ '$group': { '_id': '$productId', 'count': { '$sum': 1 } } }",
             "{ '$sort': { 'count': -1 } }",
@@ -21,4 +16,7 @@ public interface UserInteractionRepository extends MongoRepository<UserInteracti
             "{ '$project': { '_id': 1 } }"
     })
     List<String> findTop10PopularProductIds();
+
+    // Belirli bir kullanıcının etkileşimleri (AI fallback için)
+    List<UserInteraction> findByUserId(String userId);
 }

@@ -10,8 +10,8 @@ import java.time.Instant;
 @Mapper(componentModel = "spring", imports = Instant.class)
 public interface InteractionMapper {
 
-    // timestamp (long) -> createdAt (Instant) dönüşümünü elle yapıyoruz
-    @Mapping(target = "id", ignore = true) // MongoDB üretecek
-    @Mapping(target = "createdAt", expression = "java(Instant.ofEpochMilli(event.getTimestamp()))")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", expression = "java(Instant.ofEpochMilli(event.getTimestamp()))") // timestamp (long) -> createdAt (Instant) dönüşümünü elle yapıyoruz
+        // event.guestId -> entity.guestId otomatik eşleşir (isimler aynı)
     UserInteraction toEntity(UserInteractionEvent event);
 }

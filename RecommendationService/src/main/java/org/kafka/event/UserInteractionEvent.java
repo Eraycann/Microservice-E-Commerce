@@ -1,4 +1,4 @@
-package org.kafka.event;
+package org.kafka.event; // Ortak paket
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserInteractionEvent implements Serializable {
-    private String userId;
+    private String userId;      // Keycloak ID (Login olduysa dolu, yoksa null)
+    private String guestId;     // Ziyaretçi UUID (Her zaman dolu olabilir) [YENİ]
     private String productId;
     private String eventType;   // "VIEW", "ADD_TO_CART", "PURCHASE"
     private long timestamp;
