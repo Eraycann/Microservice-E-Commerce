@@ -23,4 +23,9 @@ public class ProductEvent {
 
     // YENİ EKLENEN: String değil, Map olarak taşıyoruz.
     private Map<String, Object> specs;
+
+    // --- EKSİK OLAN KISIM BURASIYDI ---
+    private boolean featured;
+    // Lombok @Data anotasyonu boolean alanlar için otomatik olarak
+    // "isFeatured()" metodunu oluşturur.
 }
