@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -18,4 +19,7 @@ public class OrderPlacedEvent implements Serializable {
     private String userFullName;  // "ADMİN ADMİN" (given_name + family_name)
 
     private BigDecimal totalPrice;
+
+    // --- YENİ EKLENEN: Satılan Ürünlerin Listesi ---
+    private List<OrderItemEvent> items;
 }

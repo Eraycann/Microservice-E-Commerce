@@ -14,65 +14,69 @@ public class OrderEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
 
-    /**
-     * Sipariş tamamlandığında çalışır.
-     * @param order Sipariş nesnesş
-     * @param email Kullanıcı maili (JWT'den geldi)
-     * @param fullName Kullanıcı adı (JWT'den geldi)
-     */
     public void publishOrderEvents(Order order, String email, String fullName) {
-        sendOrderCreatedNotification(order, email, fullName);
-        sendRecommendationData(order);
+        // 1. Recommendation Service'e Haber Ver (Interaction Olarak)
+        sendPurchaseInteractions(order);
+
+        // 2. Search Service'e (ve Notification'a) Haber Ver (Order Event Olarak)
+        sendOrderCreatedEvent(order, email, fullName);
     }
 
-    // 1. NOTIFICATION SERVICE İÇİN (Sipariş Onay Maili)
-    private void sendOrderCreatedNotification(Order order, String email, String fullName) {
-        try {
-            // Event nesnesini JWT verileriyle dolduruyoruz
-            OrderPlacedEvent event = new OrderPlacedEvent(
-                    order.getOrderNumber(),
-                    order.getUserId(),
-                    email,      // "admin@example.com"
-                    fullName,   // "ADMİN ADMİN"
-                    order.getTotalPrice()
-            );
-
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.ORDER_EXCHANGE,
-                    RabbitMQConfig.ROUTING_KEY_ORDER_CREATED,
-                    event
-            );
-            log.info("📧 Notification Event fırlatıldı: {} -> {}", order.getOrderNumber(), email);
-
-        } catch (Exception e) {
-            // Mail eventi atamazsak siparişi iptal etme, sadece logla.
-            log.error("❌ Notification Event hatası: {}", e.getMessage());
-        }
-    }
-
-    // 2. RECOMMENDATION SERVICE İÇİN (Satın Alma Verisi)
-    private void sendRecommendationData(Order order) {
+    // --- A. RECOMMENDATION SERVICE İÇİN ---
+    // UserInteractionEvent gönderiyoruz. Recommendation servisi bunu zaten dinliyor.
+    // Ekstra kuyruğa gerek yok.
+    private void sendPurchaseInteractions(Order order) {
         if (order.getItems() == null) return;
 
         order.getItems().forEach(item -> {
             try {
                 UserInteractionEvent event = new UserInteractionEvent(
                         order.getUserId(),
-                        item.getProductId(), // String olarak gönderiyoruz
-                        "PURCHASE",          // Olay tipi
+                        item.getProductId(),
+                        "PURCHASE", // Olay Tipi
                         System.currentTimeMillis()
                 );
 
                 rabbitTemplate.convertAndSend(
                         RabbitMQConfig.ACTIVITY_EXCHANGE,
-                        RabbitMQConfig.ROUTING_KEY_PURCHASE,
+                        RabbitMQConfig.ROUTING_KEY_PURCHASE, // "interaction.purchase"
                         event
                 );
 
             } catch (Exception e) {
-                log.error("❌ Recommendation Event hatası: {}", e.getMessage());
+                log.error("❌ Recommendation Event Hatası: {}", e.getMessage());
             }
         });
-        log.info("🤖 Recommendation verileri gönderildi. Ürün Sayısı: {}", order.getItems().size());
+        log.info("🛒 Satın alma interaction'ları gönderildi. Adet: {}", order.getItems().size());
+    }
+
+    // --- B. SEARCH & NOTIFICATION SERVICE İÇİN ---
+    // OrderCreatedEvent gönderiyoruz. Search servisi satış sayılarını buradan güncelleyecek.
+    private void sendOrderCreatedEvent(Order order, String email, String fullName) {
+        try {
+            // Ortak DTO kullanıyoruz (Notification ve Search için)
+            OrderPlacedEvent event = new OrderPlacedEvent(
+                    order.getOrderNumber(),
+                    order.getUserId(),
+                    email,
+                    fullName,
+                    order.getTotalPrice(),
+                    // Ürünleri DTO'ya çevir
+                    order.getItems().stream()
+                            .map(item -> new OrderItemEvent(item.getProductId(), item.getQuantity()))
+                            .toList()
+            );
+
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.ORDER_EXCHANGE,
+                    RabbitMQConfig.ROUTING_KEY_ORDER_CREATED, // "order.created"
+                    event
+            );
+
+            log.info("📦 Sipariş Eventi fırlatıldı: {}", order.getOrderNumber());
+
+        } catch (Exception e) {
+            log.error("❌ Order Event Hatası: {}", e.getMessage());
+        }
     }
 }
