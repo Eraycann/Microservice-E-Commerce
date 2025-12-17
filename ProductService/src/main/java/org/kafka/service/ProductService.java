@@ -247,4 +247,24 @@ public class ProductService {
     public long countByBrandId(Long brandId) {
         return productRepository.countByBrandId(brandId);
     }
+
+
+    //       -------------
+
+    // --- YENİ METOT: VİTRİN YÖNETİMİ ---
+    @Transactional
+    public ProductDetailResponseDto updateFeaturedStatus(Long id, boolean featured) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND));
+
+        // Durumu güncelle (Sadece bayrak değişiyor)
+        product.setFeatured(featured);
+        Product savedProduct = productRepository.save(product);
+
+        // 🚀 RabbitMQ ile Search Service'e haber ver (UPDATE Olayı)
+        // Search Service bu mesajı alınca featured bilgisini de güncelleyecek.
+        searchEventPublisher.sendProductEvent(savedProduct, "UPDATE");
+
+        return productMapper.toDetailResponse(savedProduct);
+    }
 }

@@ -71,5 +71,15 @@ public class ProductController {
     public ResponseEntity<ProductCartDetailDto> getProductForCart(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductForCart(id));
     }
+
+    // URL: PATCH /api/v1/products/{id}/featured?featured=true
+    @PatchMapping("/{id}/featured")
+    @PreAuthorize("hasRole('superuser')") // Sadece admin yapabilir
+    public ResponseEntity<ProductDetailResponseDto> updateFeaturedStatus(
+            @PathVariable Long id,
+            @RequestParam boolean featured) {
+
+        return ResponseEntity.ok(productService.updateFeaturedStatus(id, featured));
+    }
 }
 
