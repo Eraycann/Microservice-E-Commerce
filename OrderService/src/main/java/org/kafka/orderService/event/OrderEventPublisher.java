@@ -24,14 +24,16 @@ public class OrderEventPublisher {
 
     // --- A. RECOMMENDATION SERVICE İÇİN ---
     // UserInteractionEvent gönderiyoruz. Recommendation servisi bunu zaten dinliyor.
-    // Ekstra kuyruğa gerek yok.
     private void sendPurchaseInteractions(Order order) {
         if (order.getItems() == null) return;
 
         order.getItems().forEach(item -> {
             try {
+                // HATA BURADA ÇÖZÜLDÜ:
+                // DTO sırası: userId, guestId, productId, eventType, timestamp
                 UserInteractionEvent event = new UserInteractionEvent(
                         order.getUserId(),
+                        null, // guestId: Siparişte kullanıcı bellidir, guestId'ye gerek yok (null).
                         item.getProductId(),
                         "PURCHASE", // Olay Tipi
                         System.currentTimeMillis()
