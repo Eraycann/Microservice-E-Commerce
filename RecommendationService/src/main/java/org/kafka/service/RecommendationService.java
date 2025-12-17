@@ -8,7 +8,12 @@ import org.kafka.dto.AiRequest;
 import org.kafka.dto.AiResponse;
 import org.kafka.dto.ProductDto;
 import org.kafka.repository.UserInteractionRepository;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.kafka.model.UserInteraction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,67 +27,74 @@ public class RecommendationService {
     private final UserInteractionRepository repository;
     private final ProductServiceClient productServiceClient;
     private final AiEngineClient aiEngineClient;
+    private final MongoTemplate mongoTemplate; // Bulk Update için gerekli
 
     /**
-     * Kullanıcıya özel önerileri getirir.
-     * AI varsa AI'dan, yoksa Popüler ürünlerden.
+     * Öneri Getir: UserId varsa ona göre, yoksa GuestId'ye göre.
      */
-    public List<ProductDto> getRecommendations(String userId) {
+    public List<ProductDto> getRecommendations(String userId, String guestId) {
+        // AI servisine hangisi varsa onu gönderiyoruz
+        String targetId = (userId != null) ? userId : guestId;
 
-        // ADIM 1: Ürün ID'lerini bul (Candidate Generation)
-        List<String> productIds = getProductIdsFromAI(userId);
+        if (targetId == null) {
+            // İkisi de yoksa direkt popüler ürünleri dön
+            return getPopularProducts();
+        }
 
-        // ADIM 2: Eğer AI çalışmazsa veya boş dönerse Fallback Yap (Popüler Ürünler)
+        List<String> productIds = getProductIdsFromAI(targetId);
+
         if (productIds.isEmpty()) {
-            log.warn("⚠️ AI servisi öneri yapamadı (Cold Start veya Hata). Fallback devreye giriyor.");
+            log.warn("⚠️ AI öneri yapamadı. Fallback: Popüler Ürünler.");
             productIds = repository.findTop10PopularProductIds();
         }
 
-        // Hala boşsa (Veritabanı da boşsa yapacak bir şey yok)
-        if (productIds.isEmpty()) {
-            return new ArrayList<>();
-        }
+        if (productIds.isEmpty()) return new ArrayList<>();
 
-        // ADIM 3: Ürün Detaylarını Getir (Data Enrichment)
-        // Product Service'e gidip "Bana bu ID'lerin resmini, fiyatını ver" diyoruz.
         try {
             return productServiceClient.getProductsByIds(productIds);
         } catch (Exception e) {
-            log.error("❌ Product Service erişim hatası: {}", e.getMessage());
+            log.error("❌ Product Service hatası: {}", e.getMessage());
             return new ArrayList<>();
         }
     }
 
-    private List<String> getProductIdsFromAI(String userId) {
-        try {
-            // Python API'ye istek atıyoruz
-            AiResponse response = aiEngineClient.getRecommendations(new AiRequest(userId));
+    private List<ProductDto> getPopularProducts() {
+        List<String> ids = repository.findTop10PopularProductIds();
+        return productServiceClient.getProductsByIds(ids);
+    }
 
-            // --- DÜZELTİLEN KISIM: NULL KONTROLLERİ ---
-            // response null gelebilir veya içi boş olabilir, kontrol etmezsek patlar.
+    private List<String> getProductIdsFromAI(String targetId) {
+        try {
+            AiResponse response = aiEngineClient.getRecommendations(new AiRequest(targetId));
             if (response != null && response.getRecommendations() != null && !response.getRecommendations().isEmpty()) {
-                log.info("🤖 AI Motoru öneri yaptı: {} adet ürün", response.getRecommendations().size());
                 return response.getRecommendations();
             }
         } catch (Exception e) {
-            // Python kapalıysa veya hata verirse akışı bozma, boş liste dön ki Fallback çalışsın
-            log.error("🔌 AI Engine bağlantı hatası veya kapalı: {}", e.getMessage());
+            log.error("🔌 AI Engine hatası: {}", e.getMessage());
         }
         return new ArrayList<>();
     }
 
-    // --- YENİ EKLENEN METOT (EĞİTİM TETİKLEME) ---
+    // --- MERGE İŞLEMİ (GUEST -> USER) ---
+    public void mergeGuestData(String guestId, String userId) {
+        // SQL: UPDATE user_interactions SET user_id = userId, guest_id = null WHERE guest_id = guestId
+
+        Query query = new Query(Criteria.where("guestId").is(guestId));
+        Update update = new Update().set("userId", userId).set("guestId", null); // guestId'yi silebiliriz veya tutabiliriz, null yapmak mantıklı.
+
+        var result = mongoTemplate.updateMulti(query, update, UserInteraction.class);
+
+        log.info("🔗 Merge Tamamlandı: {} adet etkileşim Guest({}) -> User({})'a taşındı.",
+                result.getModifiedCount(), guestId, userId);
+    }
+
+    // Manuel Eğitim (Admin)
     public String triggerManualTraining() {
         try {
-            log.info("🚀 Manuel model eğitimi tetikleniyor...");
             Map<String, Object> response = aiEngineClient.trainModel();
-
-            log.info("✅ Python Cevabı: {}", response);
-            return "Eğitim Başlatıldı. Detay: " + response.toString();
-
+            return "Eğitim Başlatıldı: " + response.toString();
         } catch (Exception e) {
-            log.error("❌ Eğitim tetiklenirken hata oluştu: {}", e.getMessage());
-            throw new RuntimeException("AI Servisine ulaşılamadı: " + e.getMessage());
+            return "Hata: " + e.getMessage();
         }
     }
 }
