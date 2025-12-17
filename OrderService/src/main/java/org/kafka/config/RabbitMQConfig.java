@@ -11,18 +11,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    // --- 1. Recommendation Service İçin (Activity Exchange) ---
+    // --- 1. Recommendation İçin (User Activity) ---
     public static final String ACTIVITY_EXCHANGE = "user.activity.exchange";
-
-    // Routing Keys (Aksiyon Tipleri)
+    // Recommendation servisi "interaction.#" dinlediği için bu key ile gönderirsek yakalar.
     public static final String ROUTING_KEY_PURCHASE = "interaction.purchase";
-    public static final String ROUTING_KEY_CART_ADD = "interaction.cart.add"; // <-- EKSİK OLAN BU SATIRDI
 
-    // --- 2. Notification Service İçin (Order Exchange) ---
+    // --- 2. Search & Notification İçin (Order Events) ---
     public static final String ORDER_EXCHANGE = "order.exchange";
     public static final String ROUTING_KEY_ORDER_CREATED = "order.created";
-
-    // --- Exchange Tanımları ---
 
     @Bean
     public TopicExchange activityExchange() {
@@ -34,7 +30,6 @@ public class RabbitMQConfig {
         return new TopicExchange(ORDER_EXCHANGE);
     }
 
-    // --- Standart Converter ---
     @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
