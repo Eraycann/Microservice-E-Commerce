@@ -61,4 +61,27 @@ public class SearchService {
         }
         return searchRepository.autoSuggestProductNames(input);
     }
+
+    // 1. Öne Çıkan Ürünler (Featured = true)
+    public List<ProductIndex> getFeaturedProducts() {
+        // Doğrudan Spring Data Repository metodu türetebiliriz veya CustomRepo kullanabiliriz.
+        // En kolayı Repository interface'ine şunu eklemektir: List<ProductIndex> findByFeaturedTrue();
+        // Ama şimdilik Native mantığıyla Repository'e eklemediysek, service içinde çözebiliriz:
+        return searchRepository.findByFeaturedTrue(); // Bunu interface'e ekleyeceğiz
+    }
+
+    // 2. Çok Satanlar
+    public List<ProductIndex> getBestSellers() {
+        return searchRepository.findBestSellers(10); // İlk 10
+    }
+
+    // 3. Popüler Markalar
+    public List<String> getTopBrands() {
+        return searchRepository.findTopBrands(5); // İlk 5 marka
+    }
+
+    // 4. Sipariş Geldiğinde Çalışacak Metot (RabbitMQ Listener bunu çağıracak)
+    public void updateSalesCount(String productId, int quantity) {
+        searchRepository.incrementSalesCount(productId, quantity);
+    }
 }
