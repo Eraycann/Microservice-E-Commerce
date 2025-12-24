@@ -29,7 +29,6 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 
-        // XOR CSRF Handler (Frontend entegrasyonu için)
         ServerCsrfTokenRequestAttributeHandler requestHandler = new ServerCsrfTokenRequestAttributeHandler();
         requestHandler.setTokenFromMultipartDataEnabled(false);
 
@@ -39,29 +38,30 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(requestHandler)
                 )
                 .authorizeExchange(exchanges -> exchanges
-                        // --- 1. SİSTEM ENDPOINTLERİ (HERKESE AÇIK) ---
+                        // --- 1. SİSTEM & AUTH ---
                         .pathMatchers("/", "/login/**", "/oauth2/**", "/logout", "/favicon.ico").permitAll()
-                        .pathMatchers("/actuator/**").permitAll() // Sağlık kontrolleri için
+                        .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/webjars/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
 
-                        // --- 2. İŞ ENDPOINTLERİ (HALKA AÇIK - PUBLIC) ---
-                        // Misafir kullanıcılar ürünleri, kategorileri ve aramayı görebilmeli.
-                        // Dikkat: Sadece GET istekleri açıldı. POST/PUT/DELETE hala kilitli.
+                        // --- 2. PRODUCT SERVICE (Public GET) ---
                         .pathMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
+
+                        // --- 3. SEARCH SERVICE (Public GET) ---
                         .pathMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
 
-                        // Öneri servisi için (Giriş yapmamış kullanıcıya genel öneriler sunmak istersek)
+                        // --- 4. RECOMMENDATION SERVICE (Public GET) ---
                         .pathMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
 
-                        // Kullanıcı geçmişi (Session bazlı takip için public olabilir, içeride guestId kontrolü yapılır)
-                        .pathMatchers(HttpMethod.POST, "/api/users/history").permitAll()
+                        // --- 5. USER SERVICE (GEÇMİŞ / HISTORY - Public POST) ---
+                        // Misafirler ürün detayına girdiğinde 'history' kaydı atabilmeli.
+                        // '/api/users/history/**' diyerek {productId} kısmını da kapsıyoruz.
+                        .pathMatchers("/api/users/history/**").permitAll()
 
-                        // --- 3. DİĞER TÜM İSTEKLER (LOGIN GEREKLİ) ---
+                        // --- 6. DİĞER HER ŞEY KİLİTLİ ---
                         .anyExchange().authenticated()
                 )
-                // Hem Login Sayfası (OAuth2 Client) hem Token Doğrulama (Resource Server) aktif
                 .oauth2Login(Customizer.withDefaults())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .logout(logout -> logout
@@ -72,7 +72,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CSRF Cookie'nin Frontend'e düzgün gitmesini sağlayan filtre
     @Bean
     public WebFilter csrfCookieWebFilter() {
         return (exchange, chain) -> {
@@ -81,7 +80,6 @@ public class SecurityConfig {
         };
     }
 
-    // Logout sonrası Keycloak'tan da çıkış yapıp ana sayfaya dönme ayarı
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
         OidcClientInitiatedServerLogoutSuccessHandler handler =
                 new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
