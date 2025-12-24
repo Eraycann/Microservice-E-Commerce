@@ -5,7 +5,12 @@ dependencies {
     implementation libs.springBootStarterWebFlux    // Gateway Reactive çalışır
     implementation libs.springSecurityOAuth2ResourceServer // Gerekirse token doğrulamak için
     implementation libs.springSecurityOAuth2Client
+
+    // 🚀 EKLENDİ: LoadBalancer Performansı İçin (Caffeine Cache)
+    implementation libs.caffeine
+
+    implementation libs.springCloudConfigClient
+
     compileOnly libs.lombok
     annotationProcessor libs.lombok
-    implementation libs.springCloudConfigClient
 }

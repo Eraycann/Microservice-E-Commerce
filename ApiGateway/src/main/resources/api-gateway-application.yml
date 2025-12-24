@@ -25,8 +25,15 @@ spring:
         jwt:
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
-  # --- 2. GATEWAY ROUTING ---
+  # --- 2. CLOUD CONFIG & GATEWAY & LOADBALANCER ---
   cloud:
+    # 🚀 YENİ EKLENDİ: LoadBalancer Cache (Caffeine)
+    loadbalancer:
+      cache:
+        enabled: true
+        caffeine:
+          spec: initialCapacity=10,maximumSize=500,expireAfterWrite=5m # 5 dk sonra sil
+
     gateway:
       default-filters:
         - TokenRelay
@@ -109,7 +116,7 @@ spring:
                 name: feedbackCircuitBreaker
                 fallbackUri: forward:/fallback/feedback
 
-        # --- [YENİ] SEARCH SERVICE ---
+        # --- SEARCH SERVICE ---
         - id: search-service
           uri: lb://search-service
           predicates:
@@ -155,6 +162,5 @@ resilience4j:
         baseConfig: default
       feedbackCircuitBreaker:
         baseConfig: default
-      # --- YENİ EKLENEN ---
       searchCircuitBreaker:
         baseConfig: default
