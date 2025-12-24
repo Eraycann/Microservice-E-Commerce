@@ -23,16 +23,14 @@ public class ProductController {
 
     private final ProductService productService;
 
+    // --- ADMIN İŞLEMLERİ (Kilitli) ---
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<ProductDetailResponseDto> createProduct(
-            // JSON gövdesini temsil eder
             @RequestPart("data") @Valid ProductCreateRequestDto request,
-            // Dosya yüklemelerini temsil eder
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
-
-        ProductDetailResponseDto response = productService.createProduct(request, images);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        return new ResponseEntity<>(productService.createProduct(request, images), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -40,10 +38,26 @@ public class ProductController {
     public ResponseEntity<ProductDetailResponseDto> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateRequestDto request) {
-
-        ProductDetailResponseDto response = productService.updateProduct(id, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(productService.updateProduct(id, request));
     }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('superuser')")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/featured")
+    @PreAuthorize("hasRole('superuser')")
+    public ResponseEntity<ProductDetailResponseDto> updateFeaturedStatus(
+            @PathVariable Long id,
+            @RequestParam boolean featured) {
+        return ResponseEntity.ok(productService.updateFeaturedStatus(id, featured));
+    }
+
+    // --- HALKA AÇIK İŞLEMLER (Public) ---
+    // SecurityConfig'de .permitAll() yapıldığı için burada token sormaz.
 
     @GetMapping
     public ResponseEntity<List<ProductDetailResponseDto>> getAllProducts() {
@@ -60,26 +74,8 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductBySlug(slug));
     }
 
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('superuser')")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/{id}/cart-detail")
     public ResponseEntity<ProductCartDetailDto> getProductForCart(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductForCart(id));
     }
-
-    // URL: PATCH /api/v1/products/{id}/featured?featured=true
-    @PatchMapping("/{id}/featured")
-    @PreAuthorize("hasRole('superuser')") // Sadece admin yapabilir
-    public ResponseEntity<ProductDetailResponseDto> updateFeaturedStatus(
-            @PathVariable Long id,
-            @RequestParam boolean featured) {
-
-        return ResponseEntity.ok(productService.updateFeaturedStatus(id, featured));
-    }
 }
-

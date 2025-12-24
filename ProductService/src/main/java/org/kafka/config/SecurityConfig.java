@@ -3,7 +3,7 @@ package org.kafka.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.http.HttpMethod; // <--- BU EKLENDİ
+import org.springframework.http.HttpMethod; // EKLENDİ
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,41 +22,35 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true) // @PreAuthorize kullanımı için şart
+@EnableMethodSecurity(prePostEnabled = true) // @PreAuthorize aktif edildi
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // CSRF devre dışı
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // --- 1. HALKA AÇIK ENDPOINTLER (Public) ---
-                        // Ürün, Kategori ve Marka listeleme/detay işlemleri herkese açık
+                        // Misafir kullanıcılar ürünleri listeleyebilmeli
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
 
-                        // Swagger UI ve API Docs (Geliştirme ortamı için)
+                        // Swagger & Actuator
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-
-                        // Actuator (Sağlık kontrolleri)
                         .requestMatchers("/actuator/**").permitAll()
 
                         // --- 2. KİLİTLİ ALANLAR (Protected) ---
-                        // Geri kalan tüm istekler (POST, PUT, DELETE vb.) Token gerektirir.
+                        // POST, PUT, DELETE işlemleri token gerektirir
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        // Token içindeki rolleri okumak için converter'ı bağlıyoruz
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 );
 
         return http.build();
     }
 
-    // --- AŞAĞISI AYNEN KORUNDU ---
-
-    // Keycloak "roles" claim'ini Spring Security yetkilerine çevirir
     private Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
@@ -64,11 +58,10 @@ public class SecurityConfig {
     }
 }
 
-// Rolleri Token içinden okuyan yardımcı sınıf
+// Keycloak Rollerini Spring'e Tanıtan Sınıf
 class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
-        // Keycloak'ta "realm_access" içindeki "roles" kısmına bakıyoruz
         Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
 
         if (realmAccess == null || realmAccess.isEmpty()) {
@@ -78,7 +71,7 @@ class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthorit
         Collection<String> roles = (Collection<String>) realmAccess.get("roles");
 
         return roles.stream()
-                .map(roleName -> "ROLE_" + roleName) // superuser -> ROLE_superuser
+                .map(roleName -> "ROLE_" + roleName) // Örn: ROLE_superuser
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
