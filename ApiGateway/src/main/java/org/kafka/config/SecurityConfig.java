@@ -29,30 +29,41 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 
-        // XOR SORUNUNU ÇÖZEN HANDLER (Frontend Uyumluluğu)
+        // XOR CSRF Handler (Frontend entegrasyonu için)
         ServerCsrfTokenRequestAttributeHandler requestHandler = new ServerCsrfTokenRequestAttributeHandler();
         requestHandler.setTokenFromMultipartDataEnabled(false);
 
         http
                 .csrf(csrf -> csrf
-                        // Token'ı Cookie'ye yaz (HttpOnly False olsun ki JS okuyabilsin)
                         .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(requestHandler)
                 )
                 .authorizeExchange(exchanges -> exchanges
-                        // Statik Kaynaklar ve Login
-                        .pathMatchers("/", "/login/**", "/oauth2/**", "/public/**", "/favicon.ico").permitAll()
+                        // --- 1. SİSTEM ENDPOINTLERİ (HERKESE AÇIK) ---
+                        .pathMatchers("/", "/login/**", "/oauth2/**", "/logout", "/favicon.ico").permitAll()
+                        .pathMatchers("/actuator/**").permitAll() // Sağlık kontrolleri için
+                        .pathMatchers("/webjars/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
 
-                        // PUBLIC ENDPOINTLER (Sadece GET istekleri serbest)
+                        // --- 2. İŞ ENDPOINTLERİ (HALKA AÇIK - PUBLIC) ---
+                        // Misafir kullanıcılar ürünleri, kategorileri ve aramayı görebilmeli.
+                        // Dikkat: Sadece GET istekleri açıldı. POST/PUT/DELETE hala kilitli.
                         .pathMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
 
-                        // Diğer her yer kilitli
+                        // Öneri servisi için (Giriş yapmamış kullanıcıya genel öneriler sunmak istersek)
+                        .pathMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
+
+                        // Kullanıcı geçmişi (Session bazlı takip için public olabilir, içeride guestId kontrolü yapılır)
+                        .pathMatchers(HttpMethod.POST, "/api/users/history").permitAll()
+
+                        // --- 3. DİĞER TÜM İSTEKLER (LOGIN GEREKLİ) ---
                         .anyExchange().authenticated()
                 )
+                // Hem Login Sayfası (OAuth2 Client) hem Token Doğrulama (Resource Server) aktif
                 .oauth2Login(Customizer.withDefaults())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessHandler(oidcLogoutSuccessHandler())
@@ -61,8 +72,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // WEBFLUX CSRF "LAZY" FİLTRESİ (KRİTİK)
-    // Gateway'e ilk girişte Cookie'nin oluşmasını garanti eder.
+    // CSRF Cookie'nin Frontend'e düzgün gitmesini sağlayan filtre
     @Bean
     public WebFilter csrfCookieWebFilter() {
         return (exchange, chain) -> {
@@ -71,6 +81,7 @@ public class SecurityConfig {
         };
     }
 
+    // Logout sonrası Keycloak'tan da çıkış yapıp ana sayfaya dönme ayarı
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
         OidcClientInitiatedServerLogoutSuccessHandler handler =
                 new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
