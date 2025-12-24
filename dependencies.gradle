@@ -12,7 +12,8 @@ ext {
             mapStruct                 : "1.5.5.Final",
             awsSdkS3                 : '2.25.1',
             hypersistenceUtils       : '3.7.0',
-            keycloakAdminClient      : '25.0.1' // Keycloak Admin Client Versiyonu
+            keycloakAdminClient      : '25.0.1',
+            caffeine                 : '3.1.8' // 🚀 EKLENDİ
     ]
 
     // ==============================================================
@@ -67,7 +68,7 @@ ext {
             springSecurityConfig            : "org.springframework.boot:spring-boot-starter-security:${versions.springBoot}",
             springSecurityOAuth2ResourceServer: "org.springframework.boot:spring-boot-starter-oauth2-resource-server:${versions.springBoot}",
             springSecurityOAuth2Client      : "org.springframework.boot:spring-boot-starter-oauth2-client:${versions.springBoot}",
-            keycloakAdminClient             : "org.keycloak:keycloak-admin-client:${versions.keycloakAdminClient}", // Keycloak Admin Client Tanımı
+            keycloakAdminClient             : "org.keycloak:keycloak-admin-client:${versions.keycloakAdminClient}",
 
             // ----------------------------------------------------------
             // G. SİSTEM DİRENCİ (RESILIENCE4J)
@@ -86,34 +87,31 @@ ext {
             // ----------------------------------------------------------
             // I. AWS ÇÖZÜMLERİ
             // ----------------------------------------------------------
-            // AWS SDK v2 S3 İstemcisi
             awsSdkS3                        : "software.amazon.awssdk:s3:${versions.awsSdkS3}",
-            mapStructProcessor              : "org.mapstruct:mapstruct-processor:$versions.mapStruct",
-
-            // I. MESAJLAŞMA (MESSAGING - RABBITMQ)
-            springBootStarterAmqp           : "org.springframework.boot:spring-boot-starter-amqp:${versions.springBoot}",
-
-            // J. BİLDİRİM VE ŞABLONLAR (NOTIFICATION & TEMPLATING)
-            springBootStarterMail           : "org.springframework.boot:spring-boot-starter-mail:${versions.springBoot}",
-            springBootStarterThymeleaf      : "org.springframework.boot:spring-boot-starter-thymeleaf:${versions.springBoot}",
-            springBootStarterAmqp           : "org.springframework.boot:spring-boot-starter-amqp:${versions.springBoot}",
 
             // ----------------------------------------------------------
-            // J. JSON VE SERIALIZATION
+            // J. MESAJLAŞMA & BİLDİRİM
+            // ----------------------------------------------------------
+            springBootStarterAmqp           : "org.springframework.boot:spring-boot-starter-amqp:${versions.springBoot}",
+            springBootStarterMail           : "org.springframework.boot:spring-boot-starter-mail:${versions.springBoot}",
+            springBootStarterThymeleaf      : "org.springframework.boot:spring-boot-starter-thymeleaf:${versions.springBoot}",
+
+            // ----------------------------------------------------------
+            // K. JSON VE SERIALIZATION
             // ----------------------------------------------------------
             jacksonDatatypeJsr310           : "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
 
-            // --- K. GÖZLEMLEME (OBSERVABILITY) ---
-            // 1. Actuator (Sağlık ve Metrikler)
+            // ----------------------------------------------------------
+            // L. GÖZLEMLEME (OBSERVABILITY)
+            // ----------------------------------------------------------
             springBootStarterActuator       : "org.springframework.boot:spring-boot-starter-actuator:${versions.springBoot}",
-
-            // 2. Prometheus (Metrik Formatlayıcı)
             micrometerRegistryPrometheus    : "io.micrometer:micrometer-registry-prometheus",
-
-            // 3. Distributed Tracing (Eski adıyla Sleuth - Log Takibi)
             micrometerTracingBridgeBrave    : "io.micrometer:micrometer-tracing-bridge-brave",
+            zipkinReporterBrave             : "io.zipkin.reporter2:zipkin-reporter-brave",
 
-            // 4. Zipkin Reporter (Trace'leri Zipkin'e göndermek için)
-            zipkinReporterBrave             : "io.zipkin.reporter2:zipkin-reporter-brave"
+            // ----------------------------------------------------------
+            // M. PERFORMANS & CACHE (YENİ)
+            // ----------------------------------------------------------
+            caffeine                        : "com.github.ben-manes.caffeine:caffeine:${versions.caffeine}"
     ]
 }
