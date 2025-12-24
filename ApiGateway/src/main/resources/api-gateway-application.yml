@@ -25,21 +25,23 @@ spring:
         jwt:
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
-  # --- 2. CLOUD CONFIG & GATEWAY & LOADBALANCER ---
+  # --- 2. GATEWAY & LOADBALANCER ---
   cloud:
-    # 🚀 YENİ EKLENDİ: LoadBalancer Cache (Caffeine)
+    # LoadBalancer Performansı için Caffeine Cache (Logdaki uyarıyı çözer)
     loadbalancer:
       cache:
         enabled: true
         caffeine:
-          spec: initialCapacity=10,maximumSize=500,expireAfterWrite=5m # 5 dk sonra sil
+          spec: initialCapacity=10,maximumSize=500,expireAfterWrite=5m
 
     gateway:
+      # Tüm servislere JWT Token'ı otomatik ilet
       default-filters:
         - TokenRelay
 
+      # --- ROTA TANIMLARI ---
       routes:
-        # --- PRODUCT SERVICE ---
+        # 1. PRODUCT SERVICE
         - id: product-service
           uri: lb://product-service
           predicates:
@@ -50,7 +52,7 @@ spring:
                 name: productCircuitBreaker
                 fallbackUri: forward:/fallback/product
 
-        # --- USER SERVICE ---
+        # 2. USER SERVICE
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -61,62 +63,7 @@ spring:
                 name: userCircuitBreaker
                 fallbackUri: forward:/fallback/user
 
-        # --- RECOMMENDATION SERVICE ---
-        - id: recommendation-service
-          uri: lb://recommendation-service
-          predicates:
-            - Path=/api/recommendations/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: recommendationCircuitBreaker
-                fallbackUri: forward:/fallback/recommendation
-
-        # --- ORDER SERVICE ---
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/api/orders/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: orderCircuitBreaker
-                fallbackUri: forward:/fallback/order
-
-        # --- PAYMENT SERVICE ---
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/payments/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: paymentCircuitBreaker
-                fallbackUri: forward:/fallback/payment
-
-        # --- NOTIFICATION SERVICE ---
-        - id: notification-service
-          uri: lb://notification-service
-          predicates:
-            - Path=/api/notifications/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: notificationCircuitBreaker
-                fallbackUri: forward:/fallback/notification
-
-        # --- FEEDBACK SERVICE ---
-        - id: feedback-service
-          uri: lb://feedback-service
-          predicates:
-            - Path=/api/feedbacks/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: feedbackCircuitBreaker
-                fallbackUri: forward:/fallback/feedback
-
-        # --- SEARCH SERVICE ---
+        # 3. SEARCH SERVICE
         - id: search-service
           uri: lb://search-service
           predicates:
@@ -127,13 +74,70 @@ spring:
                 name: searchCircuitBreaker
                 fallbackUri: forward:/fallback/search
 
-# --- 3. EUREKA ---
+        # 4. ORDER SERVICE
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderCircuitBreaker
+                fallbackUri: forward:/fallback/order
+
+        # 5. PAYMENT SERVICE
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: paymentCircuitBreaker
+                fallbackUri: forward:/fallback/payment
+
+        # 6. RECOMMENDATION SERVICE
+        - id: recommendation-service
+          uri: lb://recommendation-service
+          predicates:
+            - Path=/api/recommendations/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: recommendationCircuitBreaker
+                fallbackUri: forward:/fallback/recommendation
+
+        # 7. NOTIFICATION SERVICE
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationCircuitBreaker
+                fallbackUri: forward:/fallback/notification
+
+        # 8. FEEDBACK SERVICE
+        - id: feedback-service
+          uri: lb://feedback-service
+          predicates:
+            - Path=/api/feedbacks/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: feedbackCircuitBreaker
+                fallbackUri: forward:/fallback/feedback
+
+# --- 3. EUREKA CLIENT ---
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
 
-# --- 4. RESILIENCE4J (SİGORTA) AYARLARI ---
+# --- 4. RESILIENCE4J (HATA TOLERANSI) ---
 resilience4j:
   circuitbreaker:
     configs:
@@ -146,21 +150,20 @@ resilience4j:
         waitDurationInOpenState: 5s
         failureRateThreshold: 50
         eventConsumerBufferSize: 10
-
     instances:
       productCircuitBreaker:
         baseConfig: default
       userCircuitBreaker:
         baseConfig: default
-      recommendationCircuitBreaker:
+      searchCircuitBreaker:
         baseConfig: default
       orderCircuitBreaker:
         baseConfig: default
       paymentCircuitBreaker:
         baseConfig: default
+      recommendationCircuitBreaker:
+        baseConfig: default
       notificationCircuitBreaker:
         baseConfig: default
       feedbackCircuitBreaker:
-        baseConfig: default
-      searchCircuitBreaker:
         baseConfig: default
