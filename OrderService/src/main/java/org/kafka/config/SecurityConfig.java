@@ -3,6 +3,7 @@ package org.kafka.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod; // EKLENDİ
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,8 +29,19 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Sepet işlemlerine herkes erişebilir (İçeride kontrol edeceğiz)
+                        // --- 1. HALKA AÇIK ALANLAR (PUBLIC) ---
+                        // Sepet işlemleri (Ekle, Sil, Görüntüle) herkese açık olmalı
+                        // Çünkü misafir kullanıcı da sepet oluşturabilir.
                         .requestMatchers("/api/v1/cart/**").permitAll()
+
+                        // Swagger & Actuator
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+
+                        // --- 2. KORUMALI ALANLAR (PROTECTED) ---
+                        // Sipariş verme ve görüntüleme işlemleri için token şart
+                        .requestMatchers("/api/v1/orders/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -39,7 +51,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Keycloak "roles" claim'ini Spring Security yetkilerine çevirir
     private Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter() {
         JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
         jwtConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
@@ -47,12 +58,9 @@ public class SecurityConfig {
     }
 }
 
-// Rolleri Token içinden okuyan yardımcı sınıf
 class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
-        // Keycloak'ta mapper ile "roles" claim'ine rolleri eklediğimiz varsayılıyor.
-        // Eğer mapper yapmadıysanız "realm_access" içindeki "roles" kısmına bakmalısınız.
         Map<String, Object> realmAccess = (Map<String, Object>) jwt.getClaims().get("realm_access");
 
         if (realmAccess == null || realmAccess.isEmpty()) {
@@ -62,7 +70,7 @@ class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthorit
         Collection<String> roles = (Collection<String>) realmAccess.get("roles");
 
         return roles.stream()
-                .map(roleName -> "ROLE_" + roleName) // superuser -> ROLE_superuser
+                .map(roleName -> "ROLE_" + roleName)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
