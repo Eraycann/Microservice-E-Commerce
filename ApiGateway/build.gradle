@@ -7,7 +7,10 @@ dependencies {
     implementation libs.springSecurityOAuth2Client
 
     // 🚀 EKLENDİ: LoadBalancer Performansı İçin (Caffeine Cache)
-    implementation libs.caffeine
+    //implementation libs.caffeine
+
+    implementation 'org.springframework.session:spring-session-data-redis' // SESSION'I REDIS'TE TUTAR
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     implementation libs.springCloudConfigClient
 

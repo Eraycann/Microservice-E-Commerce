@@ -5,7 +5,19 @@ spring:
   application:
     name: api-gateway
 
-  # --- 1. GÜVENLİK (KEYCLOAK) ---
+  # --- 1. REDIS SESSION (Token Kasası) ---
+  session:
+    store-type: redis # Oturumları Redis'te sakla
+    timeout: 30m      # Oturum süresi
+    redis:
+      namespace: spring:session
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # --- 2. GÜVENLİK (OAuth2 Client - Login İşlemi İçin) ---
   security:
     oauth2:
       client:
@@ -17,27 +29,27 @@ spring:
           keycloak:
             provider: keycloak
             client-id: api-gateway-client
-            client-secret: 7qH8b8TS5cbkEYtXxjA58ZHMrebsy4LF
+            client-secret: 7qH8b8TS5cbkEYtXxjA58ZHMrebsy4LF # Secret burada güvende
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email, roles
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
-  # --- 2. GATEWAY & LOADBALANCER ---
+  # --- 3. GATEWAY & ROUTES ---
   cloud:
-    # LoadBalancer Performansı için Caffeine Cache (Logdaki uyarıyı çözer)
-    loadbalancer:
-      cache:
-        enabled: true
-        caffeine:
-          spec: initialCapacity=10,maximumSize=500,expireAfterWrite=5m
-
     gateway:
-      # Tüm servislere JWT Token'ı otomatik ilet
+      # TokenRelay: Cookie'den gelen session'ı açar, içindeki Token'ı header'a koyar
       default-filters:
         - TokenRelay
+
+      # --- CORS (React Bağlantısı) ---
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173" # React Vite
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true # COOKIE GÖNDERİMİ İÇİN ŞART
 
       # --- ROTA TANIMLARI ---
       routes:
@@ -74,11 +86,11 @@ spring:
                 name: searchCircuitBreaker
                 fallbackUri: forward:/fallback/search
 
-        # 4. ORDER SERVICE
+        # 4. ORDER & CART SERVICE
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/api/orders/**
+            - Path=/api/orders/**, /api/v1/cart/**
           filters:
             - name: CircuitBreaker
               args:
@@ -129,41 +141,7 @@ spring:
                 name: feedbackCircuitBreaker
                 fallbackUri: forward:/fallback/feedback
 
-# --- 3. EUREKA CLIENT ---
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-
-# --- 4. RESILIENCE4J (HATA TOLERANSI) ---
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        permittedNumberOfCallsInHalfOpenState: 3
-        slidingWindowType: COUNT_BASED
-        minimumNumberOfCalls: 5
-        waitDurationInOpenState: 5s
-        failureRateThreshold: 50
-        eventConsumerBufferSize: 10
-    instances:
-      productCircuitBreaker:
-        baseConfig: default
-      userCircuitBreaker:
-        baseConfig: default
-      searchCircuitBreaker:
-        baseConfig: default
-      orderCircuitBreaker:
-        baseConfig: default
-      paymentCircuitBreaker:
-        baseConfig: default
-      recommendationCircuitBreaker:
-        baseConfig: default
-      notificationCircuitBreaker:
-        baseConfig: default
-      feedbackCircuitBreaker:
-        baseConfig: default
