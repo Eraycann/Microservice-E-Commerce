@@ -12,8 +12,7 @@ ext {
             mapStruct                 : "1.5.5.Final",
             awsSdkS3                 : '2.25.1',
             hypersistenceUtils       : '3.7.0',
-            keycloakAdminClient      : '25.0.1',
-            caffeine                 : '3.1.8' // 🚀 EKLENDİ
+            keycloakAdminClient      : '25.0.1'
     ]
 
     // ==============================================================
@@ -41,6 +40,7 @@ ext {
 
             // NoSQL Çözümleri
             springBootDataRedis             : "org.springframework.boot:spring-boot-starter-data-redis:${versions.springBoot}",
+            springSessionDataRedis          : "org.springframework.session:spring-session-data-redis", // EKLENDİ (BFF Session için)
             springBootDataMongo             : "org.springframework.boot:spring-boot-starter-data-mongodb:${versions.springBoot}",
             springBootStarterDataElasticsearch : "org.springframework.boot:spring-boot-starter-data-elasticsearch:${versions.springBoot}",
 
@@ -107,11 +107,6 @@ ext {
             springBootStarterActuator       : "org.springframework.boot:spring-boot-starter-actuator:${versions.springBoot}",
             micrometerRegistryPrometheus    : "io.micrometer:micrometer-registry-prometheus",
             micrometerTracingBridgeBrave    : "io.micrometer:micrometer-tracing-bridge-brave",
-            zipkinReporterBrave             : "io.zipkin.reporter2:zipkin-reporter-brave",
-
-            // ----------------------------------------------------------
-            // M. PERFORMANS & CACHE (YENİ)
-            // ----------------------------------------------------------
-            caffeine                        : "com.github.ben-manes.caffeine:caffeine:${versions.caffeine}"
+            zipkinReporterBrave             : "io.zipkin.reporter2:zipkin-reporter-brave"
     ]
 }

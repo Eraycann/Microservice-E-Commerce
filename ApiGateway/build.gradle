@@ -1,19 +1,23 @@
 dependencies {
+    // --- 1. GATEWAY & REACTIVE WEB ---
     implementation libs.springCloudGateway
+    implementation libs.springBootStarterWebFlux
     implementation libs.springCloudCircuitBreakerReactor
-    implementation libs.springCloudEurekaClient // Login olmak için
-    implementation libs.springBootStarterWebFlux    // Gateway Reactive çalışır
-    implementation libs.springSecurityOAuth2ResourceServer // Gerekirse token doğrulamak için
-    implementation libs.springSecurityOAuth2Client
 
-    // 🚀 EKLENDİ: LoadBalancer Performansı İçin (Caffeine Cache)
-    //implementation libs.caffeine
-
-    implementation 'org.springframework.session:spring-session-data-redis' // SESSION'I REDIS'TE TUTAR
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
+    // --- 2. DISCOVERY & CONFIG ---
+    implementation libs.springCloudEurekaClient
     implementation libs.springCloudConfigClient
 
+    // --- 3. SECURITY (OAUTH2 & BASIC) ---
+    implementation libs.springSecurityConfig               // Temel Security
+    implementation libs.springSecurityOAuth2ResourceServer // Resource Server Desteği
+    implementation libs.springSecurityOAuth2Client         // Login Client Desteği (BFF)
+
+    // --- 4. SESSION MANAGEMENT (REDIS) ---
+    implementation libs.springSessionDataRedis // Session'ı Redis'te tutar
+    implementation libs.springBootDataRedis    // Redis bağlantısı
+
+    // --- 5. UTILS ---
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 }

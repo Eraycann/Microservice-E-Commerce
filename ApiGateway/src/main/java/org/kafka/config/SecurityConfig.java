@@ -3,6 +3,7 @@ package org.kafka.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -17,6 +18,9 @@ import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttrib
 import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Mono;
 
+// ❌ SORUNLU IMPORT SİLİNDİ (Artık gerek yok)
+// import org.springframework.security.web.server.authentication.HttpStatusServerAuthenticationEntryPoint;
+
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -30,44 +34,36 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 
-        // SPA (React) uyumlu CSRF Handler
         ServerCsrfTokenRequestAttributeHandler requestHandler = new ServerCsrfTokenRequestAttributeHandler();
         requestHandler.setTokenFromMultipartDataEnabled(false);
 
         http
-                // 1. CORS: React'in 5173 portundan gelmesine izin ver (YAML'dan okur)
                 .cors(Customizer.withDefaults())
-
-                // 2. CSRF: BFF pattern'de Cookie kullanıldığı için bu ZORUNLUDUR.
-                // HttpOnly=False yapıyoruz ki React cookie'yi okuyup X-XSRF-TOKEN header'ına yazabilsin.
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(requestHandler)
                 )
-
-                // 3. YETKİLENDİRME
                 .authorizeExchange(exchanges -> exchanges
-                        // --- Sistem ---
                         .pathMatchers("/", "/login/**", "/oauth2/**", "/logout", "/favicon.ico").permitAll()
-                        .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("/webjars/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
-
-                        // --- Public (Okuma) ---
+                        .pathMatchers("/actuator/**", "/webjars/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/brands/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
-
-                        // --- Guest İşlemleri (Sepet & Geçmiş) ---
                         .pathMatchers("/api/users/history/**").permitAll()
                         .pathMatchers("/api/v1/cart/**").permitAll()
-
-                        // --- Kalan Her Şey Login Gerektirir ---
                         .anyExchange().authenticated()
                 )
-
-                // --- GÜNCELLEME BURADA ---
+                // --- 401 DÖNÜŞ AYARI (LAMBDA İLE DÜZELTİLDİ) ---
+                // Sınıf import etmek yerine, direkt olarak yanıtın kodunu 401 yap diyoruz.
+                // Bu yöntem %100 çalışır ve import hatası vermez.
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((swe, e) ->
+                                Mono.fromRunnable(() -> swe.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED))
+                        )
+                )
+                // -----------------------
                 .oauth2Login(oauth2 -> oauth2
-                        // Giriş başarılı olunca Frontend'e (5173) yönlendir
+                        // Başarılı login sonrası Frontend'e (React - localhost:5173) yönlendir
                         .authenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler("http://localhost:5173"))
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
@@ -79,7 +75,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CSRF Cookie'nin tarayıcıya düzgün gitmesi için filtre
     @Bean
     public WebFilter csrfCookieWebFilter() {
         return (exchange, chain) -> {
@@ -88,12 +83,9 @@ public class SecurityConfig {
         };
     }
 
-    // Logout olunca kullanıcıyı Keycloak'tan da düşürür ve React ana sayfasına atar
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
         OidcClientInitiatedServerLogoutSuccessHandler handler =
                 new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
-
-        // Çıkış bitince React uygulamasına dön
         handler.setPostLogoutRedirectUri("http://localhost:5173");
         return handler;
     }
