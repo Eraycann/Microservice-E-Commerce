@@ -9,6 +9,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
 import org.springframework.security.web.server.csrf.CsrfToken;
@@ -64,12 +65,12 @@ public class SecurityConfig {
                         .anyExchange().authenticated()
                 )
 
-                // 4. OAUTH2 LOGIN (BFF'nin Kalbi)
-                // Kullanıcı login olmamışsa Gateway onu Keycloak'a yönlendirir.
-                // Başarılı olursa Code'u alır, Token'a çevirir ve Redis'e yazar.
-                .oauth2Login(Customizer.withDefaults())
-
-                // 5. ÇIKIŞ (LOGOUT)
+                // --- GÜNCELLEME BURADA ---
+                .oauth2Login(oauth2 -> oauth2
+                        // Giriş başarılı olunca Frontend'e (5173) yönlendir
+                        .authenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler("http://localhost:5173"))
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessHandler(oidcLogoutSuccessHandler())
