@@ -34,9 +34,9 @@ public class ProductEventListener {
                     .slug(event.getSlug())
                     .imageUrl(event.getImageUrl())
                     .active(event.isActive())
-                    // 👇👇👇 KRİTİK EKSİK BURASIYDI 👇👇👇
                     .specs(event.getSpecs())
-                    // 👆👆👆 BU SATIRI EKLE 👆👆👆
+                    // --- YENİ EKLENEN ---
+                    .featured(event.isFeatured())
                     .build();
 
             searchService.saveProduct(index);

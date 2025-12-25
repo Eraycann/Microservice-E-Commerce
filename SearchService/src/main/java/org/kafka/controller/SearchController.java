@@ -50,4 +50,22 @@ public class SearchController {
     public ResponseEntity<List<String>> getSuggestions(@RequestParam String input) {
         return ResponseEntity.ok(searchService.autoSuggest(input));
     }
+
+    // GET /api/v1/search/featured -> Vitrin Ürünleri
+    @GetMapping("/featured")
+    public ResponseEntity<List<ProductIndex>> getFeaturedProducts() {
+        return ResponseEntity.ok(searchService.getFeaturedProducts());
+    }
+
+    // GET /api/v1/search/bestsellers -> Çok Satanlar
+    @GetMapping("/bestsellers")
+    public ResponseEntity<List<ProductIndex>> getBestSellers() {
+        return ResponseEntity.ok(searchService.getBestSellers());
+    }
+
+    // GET /api/v1/search/top-brands -> En Popüler Markalar
+    @GetMapping("/top-brands")
+    public ResponseEntity<List<String>> getTopBrands() {
+        return ResponseEntity.ok(searchService.getTopBrands());
+    }
 }

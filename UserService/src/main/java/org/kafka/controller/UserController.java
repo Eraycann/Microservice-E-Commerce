@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/suers")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -90,8 +90,15 @@ public class UserController {
 
     // Ürün Detayına girince çağrılır
     @PostMapping("/history/{productId}")
-    public void addHistory(@AuthenticationPrincipal Jwt jwt, @PathVariable String productId) {
-        userActivityService.addProductToHistory(jwt.getClaimAsString("sub"), productId);
+    public void addHistory(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Guest-Id", required = false) String guestId,
+            @PathVariable String productId
+    ) {
+        // Eğer kullanıcı giriş yapmışsa (JWT varsa) ID'sini al, yoksa null geç.
+        String userId = (jwt != null) ? jwt.getClaimAsString("sub") : null;
+
+        userActivityService.addProductToHistory(userId, guestId, productId);
     }
 
     // Geçmiş listesini döner

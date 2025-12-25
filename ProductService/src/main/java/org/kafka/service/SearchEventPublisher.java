@@ -56,6 +56,8 @@ public class SearchEventPublisher {
                     .slug(product.getSlug())
                     .imageUrl(mainImageUrl)
                     .active(true) // Varsayılan aktif
+                    // --- YENİ EKLENEN ---
+                    .featured(product.isFeatured())
                     .specs(specsMap)
                     .build();
 

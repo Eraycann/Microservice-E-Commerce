@@ -12,6 +12,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,15 +21,25 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // @PreAuthorize kullanımı için
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Mikroservisler stateless (durumsuz), CSRF gerekmez
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().authenticated() // Tüm uçlar token ister
+                        // --- 1. GEÇMİŞ / TARİHÇE İZNİ (BURAYI EKLEDİK) ---
+                        // Misafir kullanıcıların ürün detayına girince "History" kaydı atabilmesi için
+                        // bu yolu açıyoruz. Controller içinde JWT null ise GuestID kullanılacak.
+                        .requestMatchers("/api/users/history/**").permitAll()
+
+                        // --- 2. SWAGGER & ACTUATOR (Opsiyonel - Geliştirme için) ---
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+
+                        // --- 3. DİĞER HER ŞEY (Profil, Adres vb.) KORUMALI ---
+                        .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter()))
@@ -37,7 +48,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Keycloak Rollerimi Okuyan Dönüştürücü
     private Converter<Jwt, AbstractAuthenticationToken> jwtConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
@@ -45,7 +55,6 @@ public class SecurityConfig {
     }
 }
 
-// Yardımcı Sınıf: Token içindeki rolleri okur
 class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {

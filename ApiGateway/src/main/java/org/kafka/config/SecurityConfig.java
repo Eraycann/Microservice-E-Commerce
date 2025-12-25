@@ -29,30 +29,47 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
 
-        // XOR SORUNUNU ÇÖZEN HANDLER (Frontend Uyumluluğu)
+        // SPA (React) uyumlu CSRF Handler
         ServerCsrfTokenRequestAttributeHandler requestHandler = new ServerCsrfTokenRequestAttributeHandler();
         requestHandler.setTokenFromMultipartDataEnabled(false);
 
         http
+                // 1. CORS: React'in 5173 portundan gelmesine izin ver (YAML'dan okur)
+                .cors(Customizer.withDefaults())
+
+                // 2. CSRF: BFF pattern'de Cookie kullanıldığı için bu ZORUNLUDUR.
+                // HttpOnly=False yapıyoruz ki React cookie'yi okuyup X-XSRF-TOKEN header'ına yazabilsin.
                 .csrf(csrf -> csrf
-                        // Token'ı Cookie'ye yaz (HttpOnly False olsun ki JS okuyabilsin)
                         .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(requestHandler)
                 )
+
+                // 3. YETKİLENDİRME
                 .authorizeExchange(exchanges -> exchanges
-                        // Statik Kaynaklar ve Login
-                        .pathMatchers("/", "/login/**", "/oauth2/**", "/public/**", "/favicon.ico").permitAll()
+                        // --- Sistem ---
+                        .pathMatchers("/", "/login/**", "/oauth2/**", "/logout", "/favicon.ico").permitAll()
+                        .pathMatchers("/actuator/**").permitAll()
+                        .pathMatchers("/webjars/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
 
-                        // PUBLIC ENDPOINTLER (Sadece GET istekleri serbest)
-                        .pathMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/v1/brands/**").permitAll()
+                        // --- Public (Okuma) ---
+                        .pathMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/brands/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
 
-                        // Diğer her yer kilitli
+                        // --- Guest İşlemleri (Sepet & Geçmiş) ---
+                        .pathMatchers("/api/users/history/**").permitAll()
+                        .pathMatchers("/api/v1/cart/**").permitAll()
+
+                        // --- Kalan Her Şey Login Gerektirir ---
                         .anyExchange().authenticated()
                 )
+
+                // 4. OAUTH2 LOGIN (BFF'nin Kalbi)
+                // Kullanıcı login olmamışsa Gateway onu Keycloak'a yönlendirir.
+                // Başarılı olursa Code'u alır, Token'a çevirir ve Redis'e yazar.
                 .oauth2Login(Customizer.withDefaults())
+
+                // 5. ÇIKIŞ (LOGOUT)
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessHandler(oidcLogoutSuccessHandler())
@@ -61,8 +78,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // WEBFLUX CSRF "LAZY" FİLTRESİ (KRİTİK)
-    // Gateway'e ilk girişte Cookie'nin oluşmasını garanti eder.
+    // CSRF Cookie'nin tarayıcıya düzgün gitmesi için filtre
     @Bean
     public WebFilter csrfCookieWebFilter() {
         return (exchange, chain) -> {
@@ -71,10 +87,13 @@ public class SecurityConfig {
         };
     }
 
+    // Logout olunca kullanıcıyı Keycloak'tan da düşürür ve React ana sayfasına atar
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
         OidcClientInitiatedServerLogoutSuccessHandler handler =
                 new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
-        handler.setPostLogoutRedirectUri("{baseUrl}");
+
+        // Çıkış bitince React uygulamasına dön
+        handler.setPostLogoutRedirectUri("http://localhost:5173");
         return handler;
     }
 }

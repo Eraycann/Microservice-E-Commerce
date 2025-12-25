@@ -5,7 +5,19 @@ spring:
   application:
     name: api-gateway
 
-  # --- 1. GÜVENLİK (KEYCLOAK) ---
+  # --- 1. REDIS SESSION (Token Kasası) ---
+  session:
+    store-type: redis # Oturumları Redis'te sakla
+    timeout: 30m      # Oturum süresi
+    redis:
+      namespace: spring:session
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # --- 2. GÜVENLİK (OAuth2 Client - Login İşlemi İçin) ---
   security:
     oauth2:
       client:
@@ -17,22 +29,31 @@ spring:
           keycloak:
             provider: keycloak
             client-id: api-gateway-client
-            client-secret: 7qH8b8TS5cbkEYtXxjA58ZHMrebsy4LF
+            client-secret: 7qH8b8TS5cbkEYtXxjA58ZHMrebsy4LF # Secret burada güvende
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email, roles
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
-  # --- 2. GATEWAY ROUTING ---
+  # --- 3. GATEWAY & ROUTES ---
   cloud:
     gateway:
+      # TokenRelay: Cookie'den gelen session'ı açar, içindeki Token'ı header'a koyar
       default-filters:
         - TokenRelay
 
+      # --- CORS (React Bağlantısı) ---
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173" # React Vite
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true # COOKIE GÖNDERİMİ İÇİN ŞART
+
+      # --- ROTA TANIMLARI ---
       routes:
-        # --- PRODUCT SERVICE ---
+        # 1. PRODUCT SERVICE
         - id: product-service
           uri: lb://product-service
           predicates:
@@ -43,7 +64,7 @@ spring:
                 name: productCircuitBreaker
                 fallbackUri: forward:/fallback/product
 
-        # --- USER SERVICE ---
+        # 2. USER SERVICE
         - id: user-service
           uri: lb://user-service
           predicates:
@@ -54,62 +75,7 @@ spring:
                 name: userCircuitBreaker
                 fallbackUri: forward:/fallback/user
 
-        # --- RECOMMENDATION SERVICE ---
-        - id: recommendation-service
-          uri: lb://recommendation-service
-          predicates:
-            - Path=/api/recommendations/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: recommendationCircuitBreaker
-                fallbackUri: forward:/fallback/recommendation
-
-        # --- ORDER SERVICE ---
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/api/orders/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: orderCircuitBreaker
-                fallbackUri: forward:/fallback/order
-
-        # --- PAYMENT SERVICE ---
-        - id: payment-service
-          uri: lb://payment-service
-          predicates:
-            - Path=/api/payments/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: paymentCircuitBreaker
-                fallbackUri: forward:/fallback/payment
-
-        # --- NOTIFICATION SERVICE ---
-        - id: notification-service
-          uri: lb://notification-service
-          predicates:
-            - Path=/api/notifications/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: notificationCircuitBreaker
-                fallbackUri: forward:/fallback/notification
-
-        # --- FEEDBACK SERVICE ---
-        - id: feedback-service
-          uri: lb://feedback-service
-          predicates:
-            - Path=/api/feedbacks/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: feedbackCircuitBreaker
-                fallbackUri: forward:/fallback/feedback
-
-        # --- [YENİ] SEARCH SERVICE ---
+        # 3. SEARCH SERVICE
         - id: search-service
           uri: lb://search-service
           predicates:
@@ -120,41 +86,62 @@ spring:
                 name: searchCircuitBreaker
                 fallbackUri: forward:/fallback/search
 
-# --- 3. EUREKA ---
+        # 4. ORDER & CART SERVICE
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**, /api/v1/cart/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderCircuitBreaker
+                fallbackUri: forward:/fallback/order
+
+        # 5. PAYMENT SERVICE
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: paymentCircuitBreaker
+                fallbackUri: forward:/fallback/payment
+
+        # 6. RECOMMENDATION SERVICE
+        - id: recommendation-service
+          uri: lb://recommendation-service
+          predicates:
+            - Path=/api/recommendations/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: recommendationCircuitBreaker
+                fallbackUri: forward:/fallback/recommendation
+
+        # 7. NOTIFICATION SERVICE
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationCircuitBreaker
+                fallbackUri: forward:/fallback/notification
+
+        # 8. FEEDBACK SERVICE
+        - id: feedback-service
+          uri: lb://feedback-service
+          predicates:
+            - Path=/api/feedbacks/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: feedbackCircuitBreaker
+                fallbackUri: forward:/fallback/feedback
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
-# --- 4. RESILIENCE4J (SİGORTA) AYARLARI ---
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        permittedNumberOfCallsInHalfOpenState: 3
-        slidingWindowType: COUNT_BASED
-        minimumNumberOfCalls: 5
-        waitDurationInOpenState: 5s
-        failureRateThreshold: 50
-        eventConsumerBufferSize: 10
-
-    instances:
-      productCircuitBreaker:
-        baseConfig: default
-      userCircuitBreaker:
-        baseConfig: default
-      recommendationCircuitBreaker:
-        baseConfig: default
-      orderCircuitBreaker:
-        baseConfig: default
-      paymentCircuitBreaker:
-        baseConfig: default
-      notificationCircuitBreaker:
-        baseConfig: default
-      feedbackCircuitBreaker:
-        baseConfig: default
-      # --- YENİ EKLENEN ---
-      searchCircuitBreaker:
-        baseConfig: default

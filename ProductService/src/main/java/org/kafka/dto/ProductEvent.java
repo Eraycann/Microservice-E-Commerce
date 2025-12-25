@@ -26,4 +26,7 @@ public class ProductEvent {
 
     // Search Service'in filtreleme yapabilmesi için özellikler Map olarak gidiyor
     private Map<String, Object> specs;
+
+    // --- YENİ EKLENEN ---
+    private boolean featured; // Search Service bu bilgiyi bekleyecek
 }

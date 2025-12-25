@@ -52,4 +52,10 @@ public class ProductIndex {
     // Elasticsearch bunu "specs.color", "specs.size" gibi indeksler.
     @Field(type = FieldType.Object)
     private Map<String, Object> specs;
+
+    @Field(type = FieldType.Boolean)
+    private boolean featured; // Admin panelinden "Vitrinde Göster" denilen ürünler
+
+    @Field(type = FieldType.Long)
+    private Long salesCount; // Toplam satış adedi (Analitik Veri)
 }

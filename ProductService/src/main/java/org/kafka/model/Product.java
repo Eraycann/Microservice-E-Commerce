@@ -52,4 +52,8 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
+
+    // --- YENİ EKLENEN ---
+    @Column(nullable = false)
+    private boolean featured = false; // Varsayılan olarak false (Vitrin ürünü değil)
 }

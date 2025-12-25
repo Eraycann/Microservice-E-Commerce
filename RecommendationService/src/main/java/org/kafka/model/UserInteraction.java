@@ -20,13 +20,16 @@ public class UserInteraction {
     @Id
     private String id;
 
-    @Indexed // Sorgularda hızlanmak için index
-    private String userId;
+    @Indexed
+    private String userId;  // Login ise dolu, değilse null
+
+    @Indexed
+    private String guestId; // Misafir ise dolu (YENİ EKLENDİ)
 
     @Indexed
     private String productId;
 
-    private String eventType; // VIEW, PURCHASE, etc.
+    private String eventType; // VIEW, ADD_TO_CART, PURCHASE
 
-    private Instant createdAt; // Analiz için zaman damgası
+    private Instant createdAt;
 }

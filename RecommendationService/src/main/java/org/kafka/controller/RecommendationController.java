@@ -7,10 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,20 +18,20 @@ public class RecommendationController {
 
     private final RecommendationService recommendationService;
 
-    // Herkes (Giriş yapmış kullanıcılar) erişebilir
+    // Hem Login hem Misafir destekler
     @GetMapping
-    public List<ProductDto> getRecommendations(@AuthenticationPrincipal Jwt jwt) {
-        String userId = jwt.getClaimAsString("sub");
-        return recommendationService.getRecommendations(userId);
+    public List<ProductDto> getRecommendations(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestHeader(value = "X-Guest-Id", required = false) String guestId
+    ) {
+        String userId = (jwt != null) ? jwt.getClaimAsString("sub") : null;
+
+        return recommendationService.getRecommendations(userId, guestId);
     }
 
-    // --- YENİ ADMIN ENDPOINT ---
-    // Sadece 'superuser' rolüne sahip olanlar erişebilir
-    // POST /api/recommendations/train
     @PostMapping("/train")
     @PreAuthorize("hasRole('superuser')")
     public ResponseEntity<String> forceTrainModel() {
-        String result = recommendationService.triggerManualTraining();
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(recommendationService.triggerManualTraining());
     }
 }

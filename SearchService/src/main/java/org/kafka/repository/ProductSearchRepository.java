@@ -18,4 +18,6 @@ public interface ProductSearchRepository extends ElasticsearchRepository<Product
 
     // Fiyat aralığı
     List<ProductIndex> findByPriceBetween(BigDecimal min, BigDecimal max);
+
+    List<ProductIndex> findByFeaturedTrue();
 }
