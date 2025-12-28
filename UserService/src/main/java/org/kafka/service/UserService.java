@@ -304,4 +304,13 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+    // --- STATS METHODS ---
+    
+    /**
+     * Toplam kullanıcı sayısını döndürür
+     */
+    public long getTotalUserCount() {
+        return userRepository.count();
+    }
 }

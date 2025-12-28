@@ -24,10 +24,12 @@ public interface ProductMapper {
     Product toEntity(ProductCreateRequestDto dto);
 
 
+    // --- RESPONSE ---
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "brand.name", target = "brandName")
     @Mapping(source = "inventory.stockCount", target = "stockCount")
     @Mapping(source = "specs.specsData", target = "specsData")
+    // active ve featured zaten entity'de var, DTO'da da varsa otomatik eşleşir.
     ProductDetailResponseDto toDetailResponse(Product product);
 
     List<ProductDetailResponseDto> toDetailResponseList(List<Product> products);

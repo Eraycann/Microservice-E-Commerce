@@ -32,7 +32,7 @@ public class QuestionService {
                 .userId(userId)
                 .userFullName(userFullName)
                 .productId(request.getProductId())
-                .questionText(request.getQuestionText())
+                .questionText(request.getQuestion())  // Map from question to questionText
                 .build();
 
         return questionRepository.save(question);
@@ -47,14 +47,14 @@ public class QuestionService {
             throw new BaseDomainException(FeedbackErrorCode.QUESTION_ALREADY_ANSWERED);
         }
 
-        question.setAnswerText(request.getAnswerText());
+        question.setAnswerText(request.getAnswer());  // Map from answer to answerText
         question.setAnswerDate(Instant.now());
         question.setAnsweredBy(adminName);
 
         return questionRepository.save(question);
     }
 
-    @Cacheable(value = "product_questions", key = "#productId + '-' + #pageable.pageNumber")
+    //@Cacheable(value = "product_questions", key = "#productId + '-' + #pageable.pageNumber")
     public Page<QuestionResponse> getQuestionsByProduct(String productId, Pageable pageable) {
         Page<ProductQuestion> questions = questionRepository.findByProductId(productId, pageable);
 

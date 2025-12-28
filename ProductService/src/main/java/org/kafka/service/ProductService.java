@@ -81,6 +81,19 @@ public class ProductService {
     // --- READ ---
 
     @Transactional(readOnly = true)
+    public List<ProductDetailResponseDto> getFeaturedProducts(int limit) {
+        // Veritabanından featured=true olanları çek
+        List<Product> featuredProducts = productRepository.findByFeaturedTrue();
+
+        // Eğer limit varsa (örn: 6), listeyi kısıtla
+        List<Product> limitedList = featuredProducts.stream()
+                .limit(limit)
+                .toList();
+
+        return productMapper.toDetailResponseList(limitedList);
+    }
+
+    @Transactional(readOnly = true)
     public ProductDetailResponseDto getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new BaseDomainException(ProductErrorCode.PRODUCT_NOT_FOUND));
@@ -266,5 +279,21 @@ public class ProductService {
         searchEventPublisher.sendProductEvent(savedProduct, "UPDATE");
 
         return productMapper.toDetailResponse(savedProduct);
+    }
+
+    // --- STATS METHODS ---
+    
+    /**
+     * Toplam ürün sayısını döndürür
+     */
+    public long getTotalProductCount() {
+        return productRepository.count();
+    }
+    
+    /**
+     * Düşük stoklu ürün sayısını döndürür (stok < 10)
+     */
+    public long getLowStockProductCount() {
+        return productRepository.countByInventoryStockQuantityLessThan(10);
     }
 }

@@ -31,8 +31,8 @@ public class PaymentService {
 
         // 2. SİMÜLASYON MANTIĞI
         // Gerçek hayatta burada Iyzico/Stripe API çağrılır.
-        // Test için: Tutar 10.000 TL'den büyükse YETERSİZ BAKİYE hatası verelim.
-        boolean isSuccess = request.getAmount().doubleValue() < 10000;
+        // Test için: Tutar 100.000 TL'den büyükse YETERSİZ BAKİYE hatası verelim.
+        boolean isSuccess = request.getAmount().doubleValue() < 100000;
 
         // 3. KAYIT
         Payment payment = Payment.builder()

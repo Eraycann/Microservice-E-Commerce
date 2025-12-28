@@ -11,26 +11,27 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.data.elasticsearch.annotations.Setting;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(indexName = "products") // ES'de 'products' isimli bir indeks oluşturur
-@Setting(settingPath = "/es-settings.json") // Ayar dosyasını göster
+@Document(indexName = "products")
+@Setting(settingPath = "/es-settings.json")
 public class ProductIndex {
 
     @Id
-    private String id; // ES ID'leri String tutar
+    private String id;
 
-    @Field(type = FieldType.Text, analyzer = "my_custom_analyzer") // Bu analizörü kullan
-    private String name; // "Iphone 15" aranınca "Iphone" yazsa da bulsun
+    @Field(type = FieldType.Text, analyzer = "my_custom_analyzer")
+    private String name;
 
     @Field(type = FieldType.Text)
     private String description;
 
-    @Field(type = FieldType.Keyword) // Tam eşleşme için (Filtreleme)
+    @Field(type = FieldType.Keyword)
     private String brand;
 
     @Field(type = FieldType.Keyword)
@@ -48,14 +49,75 @@ public class ProductIndex {
     @Field(type = FieldType.Keyword)
     private String imageUrl;
 
-    // JSONB verisini burada Map olarak tutuyoruz.
-    // Elasticsearch bunu "specs.color", "specs.size" gibi indeksler.
+    /** Ürün özellikleri (JSONB verisi Map olarak) */
     @Field(type = FieldType.Object)
     private Map<String, Object> specs;
 
+    /** Vitrin ürünü mü? */
     @Field(type = FieldType.Boolean)
-    private boolean featured; // Admin panelinden "Vitrinde Göster" denilen ürünler
+    private boolean featured;
 
+    /** Toplam satış adedi (analitik veri) */
     @Field(type = FieldType.Long)
-    private Long salesCount; // Toplam satış adedi (Analitik Veri)
+    @Builder.Default
+    private Long salesCount = 0L;
+
+    /** Ürün rating'i (ortalama puan) */
+    @Field(type = FieldType.Double)
+    @Builder.Default
+    private Double rating = 0.0;
+
+    /** Toplam yorum sayısı */
+    @Field(type = FieldType.Integer)
+    @Builder.Default
+    private Integer reviewCount = 0;
+
+    /** Stok miktarı */
+    @Field(type = FieldType.Integer)
+    @Builder.Default
+    private Integer stockQuantity = 0;
+
+    /** Oluşturulma tarihi */
+    @Field(type = FieldType.Date)
+    private LocalDateTime createdAt;
+
+    /** Güncellenme tarihi */
+    @Field(type = FieldType.Date)
+    private LocalDateTime updatedAt;
+
+    /** Ürün kategorisi ID'si (ilişkisel veri için) */
+    @Field(type = FieldType.Keyword)
+    private String categoryId;
+
+    /** Marka ID'si (ilişkisel veri için) */
+    @Field(type = FieldType.Keyword)
+    private String brandId;
+
+    /** Ürün etiketleri */
+    @Field(type = FieldType.Keyword)
+    private String[] tags;
+
+    /** İndirim oranı (%) */
+    @Field(type = FieldType.Double)
+    @Builder.Default
+    private Double discountPercentage = 0.0;
+
+    /** İndirimli fiyat */
+    @Field(type = FieldType.Double)
+    private BigDecimal discountedPrice;
+
+    /** Stokta var mı? */
+    public boolean isInStock() {
+        return active && stockQuantity != null && stockQuantity > 0;
+    }
+
+    /** İndirimli mi? */
+    public boolean isDiscounted() {
+        return discountPercentage != null && discountPercentage > 0 && discountedPrice != null;
+    }
+
+    /** Efektif fiyat (indirimli varsa indirimli, yoksa normal) */
+    public BigDecimal getEffectivePrice() {
+        return isDiscounted() ? discountedPrice : price;
+    }
 }

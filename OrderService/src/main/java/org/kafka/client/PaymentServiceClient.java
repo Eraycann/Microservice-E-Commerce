@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "payment-service")
 public interface PaymentServiceClient {
 
-    @PostMapping("/api/payments/process")
+    @PostMapping("/api/v1/payments/process")
     boolean processPayment(@RequestBody PaymentRequest request);
 }
 // Alttaki PaymentRequest class'ını SİL, yukarıya DTO paketine taşıdık.

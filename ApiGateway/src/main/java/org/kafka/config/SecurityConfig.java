@@ -16,10 +16,12 @@ import org.springframework.security.web.server.csrf.CookieServerCsrfTokenReposit
 import org.springframework.security.web.server.csrf.CsrfToken;
 import org.springframework.security.web.server.csrf.ServerCsrfTokenRequestAttributeHandler;
 import org.springframework.web.server.WebFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
 
-// ❌ SORUNLU IMPORT SİLİNDİ (Artık gerek yok)
-// import org.springframework.security.web.server.authentication.HttpStatusServerAuthenticationEntryPoint;
+import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -38,24 +40,43 @@ public class SecurityConfig {
         requestHandler.setTokenFromMultipartDataEnabled(false);
 
         http
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(requestHandler)
                 )
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/", "/login/**", "/oauth2/**", "/logout", "/favicon.ico").permitAll()
+                        // 1. OPTIONS (Pre-flight) İzinleri (TARAYICI İÇİN ŞART)
+                        .pathMatchers(HttpMethod.OPTIONS).permitAll()
+                        .pathMatchers("/uploads/**").permitAll() // 👈 BU SATIR ŞART!
+
+                        // 2. Sistem Yolları
+                        .pathMatchers("/", "/login/**", "/oauth2/**", "/logout", "/favicon.ico", "/error").permitAll()
                         .pathMatchers("/actuator/**", "/webjars/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/v1/products/**", "/api/v1/categories/**", "/api/v1/brands/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/v1/search/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
-                        .pathMatchers("/api/users/history/**").permitAll()
-                        .pathMatchers("/api/v1/cart/**").permitAll()
+
+                        // 3. Public API'ler (MİSAFİRLERİN GÖRMESİ GEREKENLER)
+                        .pathMatchers(HttpMethod.GET,
+                                "/api/v1/products/**", "/api/products/**",
+                                "/api/v1/categories/**", "/api/categories/**",
+                                "/api/v1/brands/**", "/api/brands/**",
+                                "/api/v1/search/**", "/api/search/**",
+                                "/api/v1/recommendations/**", "/api/recommendations/**",
+                                // 👇 İŞTE EKSİK OLAN KISIMLAR BURASIYDI! 👇
+                                "/api/v1/reviews/**", "/api/reviews/**",
+                                "/api/v1/questions/**", "/api/questions/**",
+                                "/api/v1/feedbacks/**", "/api/feedbacks/**"
+                        ).permitAll()
+
+                        // 4. Cart & History (Guest işlemleri için TAM izin - POST dahil)
+                        .pathMatchers(
+                                "/api/v1/cart/**", "/api/cart/**",
+                                "/api/users/history/**", "/api/v1/users/history/**"
+                        ).permitAll()
+
+                        // 5. Geri kalan her şey TOKEN ister
                         .anyExchange().authenticated()
                 )
-                // --- 401 DÖNÜŞ AYARI (LAMBDA İLE DÜZELTİLDİ) ---
-                // Sınıf import etmek yerine, direkt olarak yanıtın kodunu 401 yap diyoruz.
-                // Bu yöntem %100 çalışır ve import hatası vermez.
+                // --- 401 YÖNETİMİ (Login sayfasına yönlendirme yapmasın, direkt 401 dönsün) ---
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((swe, e) ->
                                 Mono.fromRunnable(() -> swe.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED))
@@ -63,7 +84,6 @@ public class SecurityConfig {
                 )
                 // -----------------------
                 .oauth2Login(oauth2 -> oauth2
-                        // Başarılı login sonrası Frontend'e (React - localhost:5173) yönlendir
                         .authenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler("http://localhost:5173"))
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
@@ -76,6 +96,19 @@ public class SecurityConfig {
     }
 
     @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    @Bean
     public WebFilter csrfCookieWebFilter() {
         return (exchange, chain) -> {
             Mono<CsrfToken> csrfToken = exchange.getAttribute(CsrfToken.class.getName());
@@ -84,9 +117,9 @@ public class SecurityConfig {
     }
 
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
-        OidcClientInitiatedServerLogoutSuccessHandler handler =
+        OidcClientInitiatedServerLogoutSuccessHandler logoutSuccessHandler =
                 new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
-        handler.setPostLogoutRedirectUri("http://localhost:5173");
-        return handler;
+        logoutSuccessHandler.setPostLogoutRedirectUri("http://localhost:5173");
+        return logoutSuccessHandler;
     }
 }

@@ -31,12 +31,25 @@ public class CartService {
      * key: "user-uuid" veya "guest:guest-uuid" olabilir.
      */
     public Cart getCart(String key) {
-        return cartRepository.findByUserId(key)
-                .orElseGet(() -> Cart.builder()
-                        .userId(key)
-                        .items(new ArrayList<>())
-                        .totalCartPrice(BigDecimal.ZERO)
-                        .build());
+        System.out.println("[CartService] Sepet getiriliyor - Key: " + key);
+        
+        Optional<Cart> cartOpt = cartRepository.findByUserId(key);
+        
+        if (cartOpt.isPresent()) {
+            Cart cart = cartOpt.get();
+            System.out.println("[CartService] Sepet bulundu - Key: " + key + 
+                             ", Items: " + (cart.getItems() != null ? cart.getItems().size() : 0) + 
+                             ", Total: " + cart.getTotalCartPrice());
+            return cart;
+        } else {
+            System.out.println("[CartService] Sepet bulunamadı, yeni sepet oluşturuluyor - Key: " + key);
+            Cart newCart = Cart.builder()
+                    .userId(key)
+                    .items(new ArrayList<>())
+                    .totalCartPrice(BigDecimal.ZERO)
+                    .build();
+            return newCart;
+        }
     }
 
     /**

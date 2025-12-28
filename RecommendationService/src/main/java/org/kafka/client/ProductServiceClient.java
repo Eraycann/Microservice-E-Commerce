@@ -12,6 +12,6 @@ import java.util.List;
 public interface ProductServiceClient {
 
     // Örn: GET /api/products/ids?ids=1,2,3
-    @GetMapping("/api/products/ids")
+    @GetMapping("/api/v1/products/ids")
     List<ProductDto> getProductsByIds(@RequestParam("ids") List<String> ids);
 }

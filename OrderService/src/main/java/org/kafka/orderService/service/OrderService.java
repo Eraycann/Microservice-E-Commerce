@@ -38,8 +38,16 @@ public class OrderService {
     @Transactional
     public OrderResponse placeOrder(String userId, String email, String fullName, String shippingAddress) {
         // 1. Sepeti Getir ve Kontrol Et
+        log.info("Sipariş oluşturma başlatıldı - UserId: {}, Email: {}", userId, email);
+        
         Cart cart = cartService.getCart(userId);
+        log.info("Sepet alındı - UserId: {}, Items: {}, Total: {}", 
+                userId, 
+                cart.getItems() != null ? cart.getItems().size() : 0, 
+                cart.getTotalCartPrice());
+        
         if (cart.getItems() == null || cart.getItems().isEmpty()) {
+            log.warn("Sepet boş - UserId: {}, Cart: {}", userId, cart);
             // ESKİSİ: throw new RuntimeException("Sepetiniz boş!");
             // YENİSİ:
             throw new BaseDomainException(OrderErrorCode.EMPTY_CART);
@@ -123,17 +131,40 @@ public class OrderService {
         return mapToResponse(order);
     }
 
+    @Transactional
     public Page<OrderResponse> getUserOrders(String userId, Pageable pageable) {
         return orderRepository.findAllByUserId(userId, pageable).map(this::mapToResponse);
     }
 
     private OrderResponse mapToResponse(Order order) {
+        // Lazy loading'i tetiklemek için items koleksiyonuna erişim
+        int itemCount = 0;
+        if (order.getItems() != null) {
+            itemCount = order.getItems().size(); // Bu satır lazy loading'i tetikler
+        }
+        
         return OrderResponse.builder()
                 .orderNumber(order.getOrderNumber())
                 .status(order.getStatus().name())
                 .totalPrice(order.getTotalPrice())
-                .itemCount(order.getItems() != null ? order.getItems().size() : 0)
+                .itemCount(itemCount)
                 .createdAt(order.getCreatedAt())
                 .build();
+    }
+
+    // --- STATS METHODS ---
+    
+    /**
+     * Toplam sipariş sayısını döndürür
+     */
+    public long getTotalOrderCount() {
+        return orderRepository.count();
+    }
+    
+    /**
+     * Toplam geliri döndürür
+     */
+    public double getTotalRevenue() {
+        return orderRepository.sumTotalPrice();
     }
 }

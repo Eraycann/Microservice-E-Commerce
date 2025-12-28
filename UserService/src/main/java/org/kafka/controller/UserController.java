@@ -12,10 +12,11 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/suers")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -120,5 +121,17 @@ public class UserController {
             @RequestBody NotificationSettings settings) {
 
         return userService.updateNotificationSettings(jwt.getClaimAsString("sub"), settings);
+    }
+
+    // --- ADMIN STATS ---
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('superuser')")
+    public Object getUserStats() {
+        try {
+            long totalUsers = userService.getTotalUserCount();
+            return Map.of("total", totalUsers);
+        } catch (Exception e) {
+            return Map.of("total", 0);
+        }
     }
 }

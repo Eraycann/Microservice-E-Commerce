@@ -5,6 +5,14 @@ spring:
   application:
     name: feedback-service
 
+  # --- MULTIPART AYARLARI (YENİ EKLENDİ) ---
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 25MB
+      file-size-threshold: 2KB
+
   # --- JACKSON AYARLARI (YENİ EKLENDİ) ---
   jackson:
     serialization:

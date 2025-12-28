@@ -27,8 +27,8 @@ public class SearchController {
     @GetMapping("/filter")
     public ResponseEntity<List<ProductIndex>> filterProducts(
             @RequestParam(required = false) String query,
-            @RequestParam(required = false) String brand,    // EKLENDİ
-            @RequestParam(required = false) String category, // EKLENDİ
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) Double minPrice,
             @RequestParam(required = false) Double maxPrice,
             @RequestParam Map<String, String> allParams
@@ -44,26 +44,25 @@ public class SearchController {
         return ResponseEntity.ok(searchService.filterProducts(query, brand, category, minPrice, maxPrice, specs));
     }
 
-    // --- YENİ ENDPOINT: ÖNERİ SİSTEMİ ---
-    // URL: GET /api/v1/search/suggestions?input=lap
+    // 3. Öneri Sistemi
     @GetMapping("/suggestions")
     public ResponseEntity<List<String>> getSuggestions(@RequestParam String input) {
         return ResponseEntity.ok(searchService.autoSuggest(input));
     }
 
-    // GET /api/v1/search/featured -> Vitrin Ürünleri
+    // 4. Vitrin Ürünleri
     @GetMapping("/featured")
     public ResponseEntity<List<ProductIndex>> getFeaturedProducts() {
         return ResponseEntity.ok(searchService.getFeaturedProducts());
     }
 
-    // GET /api/v1/search/bestsellers -> Çok Satanlar
+    // 5. Çok Satanlar
     @GetMapping("/bestsellers")
     public ResponseEntity<List<ProductIndex>> getBestSellers() {
         return ResponseEntity.ok(searchService.getBestSellers());
     }
 
-    // GET /api/v1/search/top-brands -> En Popüler Markalar
+    // 6. En Popüler Markalar
     @GetMapping("/top-brands")
     public ResponseEntity<List<String>> getTopBrands() {
         return ResponseEntity.ok(searchService.getTopBrands());

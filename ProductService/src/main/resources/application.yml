@@ -40,12 +40,7 @@ spring:
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
 # --- AWS S3 (Dosya Yükleme) ---
-aws:
-  s3:
-    access-key: YOUR_ACCESS_KEY
-    secret-key: YOUR_SECRET_KEY
-    region: us-east-1
-    bucket-name: ecommerce-product-images
+
 
 # --- SERVICE DISCOVERY ---
 eureka:

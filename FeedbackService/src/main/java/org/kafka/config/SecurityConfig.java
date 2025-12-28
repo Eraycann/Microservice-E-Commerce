@@ -3,6 +3,7 @@ package org.kafka.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.http.HttpMethod; // EKLENDİ
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,15 +21,32 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // @PreAuthorize kullanımı için
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Mikroservisler stateless (durumsuz), CSRF gerekmez
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().authenticated() // Tüm uçlar token ister
+                        // 👇 MİSAFİRLERİN DE GÖRMESİ GEREKENLER (OKUMA İZNİ)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/questions/**").permitAll()
+                        
+                        // 👇 UPLOAD EDİLEN RESİMLERE ERİŞİM
+                        .requestMatchers("/uploads/**").permitAll()
+
+                        // Test endpoints
+                        .requestMatchers("/api/v1/reviews/test-auth").permitAll()
+                        .requestMatchers("/api/v1/reviews/test-submit").permitAll()
+                        .requestMatchers("/api/v1/reviews/test-basic").permitAll()
+
+                        // Swagger UI (Opsiyonel ama iyi olur)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
+
+                        // 👇 DİĞER HER ŞEY (POST, PUT, DELETE) LOGIN GEREKTİRİR
+                        .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter()))
@@ -37,7 +55,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Keycloak Rollerimi Okuyan Dönüştürücü
     private Converter<Jwt, AbstractAuthenticationToken> jwtConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter());
@@ -45,7 +62,6 @@ public class SecurityConfig {
     }
 }
 
-// Yardımcı Sınıf: Token içindeki rolleri okur
 class KeycloakRoleConverter implements Converter<Jwt, Collection<GrantedAuthority>> {
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {

@@ -1,5 +1,6 @@
 package org.kafka.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.kafka.dto.ProductCartDetailDto;
 import org.kafka.dto.ProductCreateRequestDto;
 import org.kafka.dto.ProductDetailResponseDto;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -25,12 +27,30 @@ public class ProductController {
 
     // --- ADMIN İŞLEMLERİ (Kilitli) ---
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // Basit ürün oluşturma (JSON) - MVP için
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('superuser')")
-    public ResponseEntity<ProductDetailResponseDto> createProduct(
-            @RequestPart("data") @Valid ProductCreateRequestDto request,
+    public ResponseEntity<ProductDetailResponseDto> createProductSimple(
+            @Valid @RequestBody ProductCreateRequestDto request) {
+        return new ResponseEntity<>(productService.createProduct(request, null), HttpStatus.CREATED);
+    }
+
+    // Resimli ürün oluşturma (Multipart) - Gelişmiş özellik
+    @PostMapping(value = "/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('superuser')")
+    public ResponseEntity<ProductDetailResponseDto> createProductWithImages(
+            @RequestParam("data") String requestData,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
-        return new ResponseEntity<>(productService.createProduct(request, images), HttpStatus.CREATED);
+        
+        try {
+            // JSON string'i ProductCreateRequestDto'ya parse et
+            ObjectMapper objectMapper = new ObjectMapper();
+            ProductCreateRequestDto request = objectMapper.readValue(requestData, ProductCreateRequestDto.class);
+            
+            return new ResponseEntity<>(productService.createProduct(request, images), HttpStatus.CREATED);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid JSON data format", e);
+        }
     }
 
     @PutMapping("/{id}")
@@ -59,6 +79,12 @@ public class ProductController {
     // --- HALKA AÇIK İŞLEMLER (Public) ---
     // SecurityConfig'de .permitAll() yapıldığı için burada token sormaz.
 
+    @GetMapping("/featured")
+    public ResponseEntity<List<ProductDetailResponseDto>> getFeaturedProducts(
+            @RequestParam(defaultValue = "6") int limit) {
+        return ResponseEntity.ok(productService.getFeaturedProducts(limit));
+    }
+
     @GetMapping
     public ResponseEntity<List<ProductDetailResponseDto>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
@@ -77,5 +103,27 @@ public class ProductController {
     @GetMapping("/{id}/cart-detail")
     public ResponseEntity<ProductCartDetailDto> getProductForCart(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductForCart(id));
+    }
+
+    // --- ADMIN STATS ENDPOİNTLERİ ---
+    
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('superuser')")
+    public ResponseEntity<Object> getProductStats() {
+        try {
+            long totalProducts = productService.getTotalProductCount();
+            long lowStockProducts = productService.getLowStockProductCount();
+            
+            return ResponseEntity.ok(Map.of(
+                "total", totalProducts,
+                "lowStock", lowStockProducts
+            ));
+        } catch (Exception e) {
+            // Fallback değerleri döndür
+            return ResponseEntity.ok(Map.of(
+                "total", 0,
+                "lowStock", 0
+            ));
+        }
     }
 }

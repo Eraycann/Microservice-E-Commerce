@@ -42,41 +42,94 @@ public class ReviewService {
 
     @CacheEvict(value = "product_reviews", key = "#request.productId")
     public ReviewResponse createReview(String userId, String userFullName, ReviewRequest request, List<MultipartFile> images) {
+        try {
+            System.out.println("=== REVIEW SERVICE DEBUG ===");
+            System.out.println("UserId: " + userId);
+            System.out.println("UserFullName: " + userFullName);
+            System.out.println("Request: " + request);
+            System.out.println("Images: " + (images != null ? images.size() : "null"));
+            
+            if (images != null && images.size() > MAX_IMAGE_COUNT) {
+                throw new BaseDomainException(FeedbackErrorCode.TOO_MANY_IMAGES);
+            }
 
-        if (images != null && images.size() > MAX_IMAGE_COUNT) {
-            throw new BaseDomainException(FeedbackErrorCode.TOO_MANY_IMAGES);
+            if (request.getRating() < 1 || request.getRating() > 5) {
+                throw new BaseDomainException(FeedbackErrorCode.INVALID_RATING);
+            }
+
+            System.out.println("Checking if review already exists...");
+            if (reviewRepository.existsByUserIdAndProductId(userId, request.getProductId())) {
+                throw new BaseDomainException(FeedbackErrorCode.REVIEW_ALREADY_EXISTS);
+            }
+
+            System.out.println("Uploading images...");
+            // Handle image uploads - pass empty list if images is null
+            List<String> uploadedImageUrls = storageService.uploadImages(images != null ? images : List.of());
+            System.out.println("Uploaded image URLs: " + uploadedImageUrls);
+            
+            String cleanComment = filterBadWords(request.getComment());
+            System.out.println("Clean comment: " + cleanComment);
+
+            System.out.println("Mapping to entity...");
+            Review review = reviewMapper.toEntity(request);
+            review.setUserId(userId);
+            review.setUserFullName(userFullName);
+            review.setComment(cleanComment);
+            review.setImageUrls(uploadedImageUrls);
+
+            System.out.println("Saving review...");
+            Review savedReview = reviewRepository.save(review);
+            System.out.println("Saved review ID: " + savedReview.getId());
+            
+            System.out.println("Mapping to response...");
+            ReviewResponse response = reviewMapper.toResponse(savedReview);
+            System.out.println("=== REVIEW SERVICE SUCCESS ===");
+            
+            return response;
+            
+        } catch (Exception e) {
+            System.err.println("=== REVIEW SERVICE ERROR ===");
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+            System.err.println("=== END SERVICE ERROR ===");
+            throw e;
         }
-
-        if (request.getRating() < 1 || request.getRating() > 5) {
-            throw new BaseDomainException(FeedbackErrorCode.INVALID_RATING);
-        }
-
-        if (reviewRepository.existsByUserIdAndProductId(userId, request.getProductId())) {
-            throw new BaseDomainException(FeedbackErrorCode.REVIEW_ALREADY_EXISTS);
-        }
-
-        List<String> uploadedImageUrls = storageService.uploadImages(images);
-        String cleanComment = filterBadWords(request.getComment());
-
-        Review review = reviewMapper.toEntity(request);
-        review.setUserId(userId);
-        review.setUserFullName(userFullName);
-        review.setComment(cleanComment);
-        review.setImageUrls(uploadedImageUrls);
-
-        Review savedReview = reviewRepository.save(review);
-        return reviewMapper.toResponse(savedReview);
     }
 
-    @Cacheable(value = "product_reviews", key = "#productId + '-' + #pageable.pageNumber")
+    public List<Review> getAllReviews() {
+        return reviewRepository.findAll();
+    }
+
+    public Review saveReview(Review review) {
+        return reviewRepository.save(review);
+    }
+
+    //@Cacheable(value = "product_reviews", key = "#productId + '-' + #pageable.pageNumber")
     public Page<ReviewResponse> getReviewsByProductId(String productId, Pageable pageable) {
+        System.out.println("=== REVIEW SERVICE GET REVIEWS ===");
+        System.out.println("ProductId: " + productId);
+        System.out.println("Pageable: " + pageable);
+        
         Page<Review> reviews = reviewRepository.findByProductId(productId, pageable);
+        System.out.println("Found reviews from DB: " + reviews.getTotalElements());
+        
+        if (!reviews.getContent().isEmpty()) {
+            System.out.println("First review from DB: " + reviews.getContent().get(0));
+        }
 
         List<ReviewResponse> dtoList = reviews.getContent().stream()
                 .map(reviewMapper::toResponse)
                 .toList();
+        
+        System.out.println("Mapped DTOs count: " + dtoList.size());
+        if (!dtoList.isEmpty()) {
+            System.out.println("First mapped DTO: " + dtoList.get(0));
+            System.out.println("First DTO image URLs: " + dtoList.get(0).getImageUrls());
+        }
 
-        return new RestPage<>(dtoList, pageable, reviews.getTotalElements());
+        Page<ReviewResponse> result = new RestPage<>(dtoList, pageable, reviews.getTotalElements());
+        System.out.println("=== REVIEW SERVICE SUCCESS ===");
+        return result;
     }
 
     public ProductRatingSummary getProductRatingSummary(String productId) {

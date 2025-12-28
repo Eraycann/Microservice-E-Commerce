@@ -15,7 +15,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/questions") // URL yapısını ayırdık
+@RequestMapping("/api/v1/questions") // URL yapısını ayırdık
 @RequiredArgsConstructor
 public class QuestionController {
 
@@ -30,7 +30,18 @@ public class QuestionController {
         return questionService.askQuestion(userId, fullName, request);
     }
 
-    // 2. Soruyu Cevapla (SADECE SUPERUSER)
+    // 2. Soruyu Cevapla (SADECE SUPERUSER) - POST ve PUT desteği
+    @PostMapping("/{questionId}/answer")
+    @PreAuthorize("hasRole('superuser')")
+    public ProductQuestion answerQuestionPost(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String questionId,
+            @RequestBody AnswerRequest request) {
+
+        String adminName = jwt.getClaimAsString("name");
+        return questionService.answerQuestion(questionId, adminName, request);
+    }
+
     @PutMapping("/{questionId}/answer")
     @PreAuthorize("hasRole('superuser')")
     public ProductQuestion answerQuestion(

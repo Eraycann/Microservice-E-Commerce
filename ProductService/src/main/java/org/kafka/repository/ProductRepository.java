@@ -2,6 +2,10 @@ package org.kafka.repository;
 
 import org.kafka.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -29,4 +33,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * Brand silinmeden önce kontrol etmek için kullanılabilir.
      */
     long countByBrandId(Long brandId);
+
+    // 👇 BU METODU EKLE
+    List<Product> findByFeaturedTrue();
+    
+    /**
+     * Düşük stoklu ürün sayısını döndürür
+     */
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.inventory.stockCount < :threshold")
+    long countByInventoryStockQuantityLessThan(@Param("threshold") int threshold);
 }

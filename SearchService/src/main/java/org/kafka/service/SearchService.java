@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.kafka.model.ProductIndex;
 import org.kafka.repository.ProductSearchRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +18,6 @@ public class SearchService {
 
     private final ProductSearchRepository searchRepository;
 
-    // ... (saveProduct ve deleteProduct metodları aynen kalıyor) ...
     public void saveProduct(ProductIndex productIndex) {
         searchRepository.save(productIndex);
     }
@@ -29,16 +30,25 @@ public class SearchService {
 
     /**
      * SENARYO 1: Basit Arama Kutusu
-     * Kullanıcı sadece yazı yazar. Diğer filtreler boştur.
+     * Pageable eklendi (Varsayılan: Sayfa 0, Boyut 20)
      */
     public List<ProductIndex> search(String query) {
-        // Tüm filtreleri null geçerek ana metodu çağırıyoruz.
-        return searchRepository.searchByFilters(query, null, null, null, null, null);
+        // Repository artık 7 argüman bekliyor (sonuncusu Pageable)
+        // Dönen Page nesnesinin içeriğini (.getContent()) alarak List'e çeviriyoruz.
+        return searchRepository.searchByFilters(
+                query,
+                null,
+                null,
+                null,
+                null,
+                null,
+                PageRequest.of(0, 20)
+        ).getContent();
     }
 
     /**
      * SENARYO 2: Detaylı Filtreleme
-     * Kullanıcı hem arama yapabilir hem de filtre seçebilir.
+     * Double -> BigDecimal dönüşümü ve Pageable eklendi.
      */
     public List<ProductIndex> filterProducts(
             String query,
@@ -48,39 +58,51 @@ public class SearchService {
             Double maxPrice,
             Map<String, String> specs
     ) {
-        return searchRepository.searchByFilters(query, brand, category, minPrice, maxPrice, specs);
+        // Double gelen fiyatları BigDecimal'e çeviriyoruz (Repository öyle bekliyor)
+        BigDecimal min = minPrice != null ? BigDecimal.valueOf(minPrice) : null;
+        BigDecimal max = maxPrice != null ? BigDecimal.valueOf(maxPrice) : null;
+
+        return searchRepository.searchByFilters(
+                query,
+                brand,
+                category,
+                min,
+                max,
+                specs,
+                PageRequest.of(0, 20) // Varsayılan sayfalama
+        ).getContent();
     }
 
     /**
      * SENARYO 3: Autocomplete
-     * Kullanıcı harflere bastıkça çalışır.
      */
     public List<String> autoSuggest(String input) {
         if (input == null || input.length() < 2) {
-            return List.of(); // En az 2 harf yazılmalı
+            return List.of();
         }
         return searchRepository.autoSuggestProductNames(input);
     }
 
-    // 1. Öne Çıkan Ürünler (Featured = true)
+    // 1. Öne Çıkan Ürünler
     public List<ProductIndex> getFeaturedProducts() {
-        // Doğrudan Spring Data Repository metodu türetebiliriz veya CustomRepo kullanabiliriz.
-        // En kolayı Repository interface'ine şunu eklemektir: List<ProductIndex> findByFeaturedTrue();
-        // Ama şimdilik Native mantığıyla Repository'e eklemediysek, service içinde çözebiliriz:
-        return searchRepository.findByFeaturedTrue(); // Bunu interface'e ekleyeceğiz
+        // Eski metod: findByFeaturedTrue() yoktu.
+        // Yeni metod: findFeaturedProducts(Pageable)
+        return searchRepository.findFeaturedProducts(PageRequest.of(0, 10)).getContent();
     }
 
     // 2. Çok Satanlar
     public List<ProductIndex> getBestSellers() {
-        return searchRepository.findBestSellers(10); // İlk 10
+        // HATA BURADAYDI: int değil Pageable gönderiyoruz.
+        return searchRepository.findBestSellers(PageRequest.of(0, 10)).getContent();
     }
 
     // 3. Popüler Markalar
     public List<String> getTopBrands() {
-        return searchRepository.findTopBrands(5); // İlk 5 marka
+        // Bu metodda değişiklik yok, int limit alıyor.
+        return searchRepository.findTopBrands(5);
     }
 
-    // 4. Sipariş Geldiğinde Çalışacak Metot (RabbitMQ Listener bunu çağıracak)
+    // 4. Satış Sayısı Güncelleme
     public void updateSalesCount(String productId, int quantity) {
         searchRepository.incrementSalesCount(productId, quantity);
     }

@@ -5,10 +5,17 @@ spring:
   application:
     name: api-gateway
 
+  # 👇👇👇 BURASI EKLENDİ: DOSYA YÜKLEME İZNİ (ÇOK ÖNEMLİ) 👇👇👇
+  main:
+    web-application-type: reactive # Gateway'in reaktif olduğunu garantiye alalım
+  codec:
+    max-in-memory-size: 20MB # Varsayılan 256KB'dır, bunu 20MB yaptık ki resimler geçsin
+  # 👆👆👆 --------------------------------------------------- 👆👆👆
+
   # --- 1. REDIS SESSION (Token Kasası) ---
   session:
-    store-type: redis # Oturumları Redis'te sakla
-    timeout: 30m      # Oturum süresi
+    store-type: redis
+    timeout: 30m
     redis:
       namespace: spring:session
 
@@ -35,8 +42,7 @@ spring:
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid, profile, email, roles
 
-      # B. TOKEN DOĞRULAMA İÇİN (RESOURCE SERVER - EKSİK OLAN KISIM)
-      # Bunu eklemezsen "ReactiveJwtDecoder" hatası alırsın.
+      # B. TOKEN DOĞRULAMA İÇİN (RESOURCE SERVER)
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
@@ -44,27 +50,19 @@ spring:
   # --- 3. GATEWAY & ROUTES ---
   cloud:
     gateway:
-      # TokenRelay: Cookie'den gelen session'ı açar, içindeki Token'ı header'a koyar
+      # TokenRelay: Cookie'den gelen token'ı mikroservise iletir
       default-filters:
         - TokenRelay
 
-      # --- CORS (React Bağlantısı) ---
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://localhost:5173" # React Vite
-            allowedMethods: "*"
-            allowedHeaders: "*"
-            allowCredentials: true # COOKIE GÖNDERİMİ İÇİN ŞART
+      # ⚠️ DİKKAT: globalcors BURADAN SİLİNDİ (Java Config kullanılıyor)
 
-      # --- ROTA TANIMLARI ---
+      # --- ROTA TANIMLARI (HEM /api/... HEM /api/v1/... DESTEKLİ) ---
       routes:
         # 1. PRODUCT SERVICE
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/v1/products/**, /api/v1/categories/**, /api/v1/brands/**
+            - Path=/api/v1/products/**, /api/products/**, /api/v1/categories/**, /api/categories/**, /api/v1/brands/**, /api/brands/**
           filters:
             - name: CircuitBreaker
               args:
@@ -75,7 +73,7 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/users/**
+            - Path=/api/v1/users/**, /api/users/**
           filters:
             - name: CircuitBreaker
               args:
@@ -86,7 +84,7 @@ spring:
         - id: search-service
           uri: lb://search-service
           predicates:
-            - Path=/api/v1/search/**
+            - Path=/api/v1/search/**, /api/search/**
           filters:
             - name: CircuitBreaker
               args:
@@ -97,7 +95,7 @@ spring:
         - id: order-service
           uri: lb://order-service
           predicates:
-            - Path=/api/orders/**, /api/v1/cart/**
+            - Path=/api/v1/orders/**, /api/orders/**, /api/v1/cart/**, /api/cart/**
           filters:
             - name: CircuitBreaker
               args:
@@ -108,18 +106,19 @@ spring:
         - id: payment-service
           uri: lb://payment-service
           predicates:
-            - Path=/api/payments/**
+            - Path=/api/v1/payments/**, /api/payments/**
           filters:
             - name: CircuitBreaker
               args:
                 name: paymentCircuitBreaker
                 fallbackUri: forward:/fallback/payment
 
-        # 6. RECOMMENDATION SERVICE
+        # 6. RECOMMENDATION SERVICE (SORUNLU OLAN KISIM ÇÖZÜLDÜ)
         - id: recommendation-service
           uri: lb://recommendation-service
           predicates:
-            - Path=/api/recommendations/**
+            # Hem v1 hem normal yolu kabul eder
+            - Path=/api/v1/recommendations/**, /api/recommendations/**
           filters:
             - name: CircuitBreaker
               args:
@@ -130,26 +129,33 @@ spring:
         - id: notification-service
           uri: lb://notification-service
           predicates:
-            - Path=/api/notifications/**
+            - Path=/api/v1/notifications/**, /api/notifications/**
           filters:
             - name: CircuitBreaker
               args:
                 name: notificationCircuitBreaker
                 fallbackUri: forward:/fallback/notification
 
-        # 8. FEEDBACK SERVICE
+        # 8. FEEDBACK SERVICE (API İŞLEMLERİ)
         - id: feedback-service
           uri: lb://feedback-service
           predicates:
-            - Path=/api/feedbacks/**
+            - Path=/api/v1/reviews/**, /api/v1/questions/**, /api/v1/feedbacks/**
           filters:
             - name: CircuitBreaker
               args:
                 name: feedbackCircuitBreaker
                 fallbackUri: forward:/fallback/feedback
 
+        # 👇👇👇 BURASI EKLENECEK: RESİM YÜKLEME ROTASI 👇👇👇
+        # Frontend "/uploads/resim.jpg" isteği attığında buraya düşecek.
+        - id: feedback-service-uploads
+          uri: lb://feedback-service
+          predicates:
+            - Path=/uploads/**
+        # 👆👆👆 ------------------------------------------ 👆👆👆
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
-

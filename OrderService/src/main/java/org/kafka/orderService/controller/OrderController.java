@@ -8,9 +8,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -41,5 +44,25 @@ public class OrderController {
 
         String userId = jwt.getClaimAsString("sub");
         return ResponseEntity.ok(orderService.getUserOrders(userId, PageRequest.of(page, size, Sort.by("createdAt").descending())));
+    }
+
+    // --- ADMIN STATS ---
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('superuser')")
+    public ResponseEntity<Object> getOrderStats() {
+        try {
+            long totalOrders = orderService.getTotalOrderCount();
+            double totalRevenue = orderService.getTotalRevenue();
+            
+            return ResponseEntity.ok(Map.of(
+                "total", totalOrders,
+                "revenue", totalRevenue
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                "total", 0,
+                "revenue", 0.0
+            ));
+        }
     }
 }

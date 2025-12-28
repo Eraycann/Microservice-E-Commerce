@@ -1,28 +1,56 @@
 package org.kafka.repository;
 
+import org.kafka.dto.SearchRequest;
 import org.kafka.model.ProductIndex;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 public interface CustomSearchRepository {
 
-    // Mevcut filtreleme metodun
-    List<ProductIndex> searchByFilters(
-            String query, String brand, String category,
-            Double minPrice, Double maxPrice, Map<String, String> searchSpecs
+    /**
+     * Temel filtreleme metodu (pagination ile)
+     */
+    Page<ProductIndex> searchByFilters(
+            String query, 
+            String brand, 
+            String category,
+            BigDecimal minPrice, 
+            BigDecimal maxPrice, 
+            Map<String, String> searchSpecs,
+            Pageable pageable
     );
 
-    // Mevcut autocomplete metodun
+    /**
+     * Autocomplete önerileri
+     */
     List<String> autoSuggestProductNames(String input);
 
-    // --- YENİ EKLENENLER ---
-
-    // 1. Satış sayısını atomik olarak artır (Veriyi çekmeden güncelleme)
+    /**
+     * Satış sayısını atomik olarak artır
+     */
     void incrementSalesCount(String productId, int quantity);
 
-    // 2. Çok satan ürünleri getir
-    List<ProductIndex> findBestSellers(int limit);
+    /**
+     * Çok satan ürünleri getir (pagination ile)
+     */
+    Page<ProductIndex> findBestSellers(Pageable pageable);
 
-    // 3. En çok satan markaları getir (Aggregation)
+    /**
+     * Vitrin ürünlerini getir (pagination ile)
+     */
+    Page<ProductIndex> findFeaturedProducts(Pageable pageable);
+
+    /**
+     * En çok satan markaları getir (aggregation)
+     */
     List<String> findTopBrands(int limit);
+
+    /**
+     * Gelişmiş arama (kompleks sorgular için)
+     */
+    Page<ProductIndex> advancedSearch(SearchRequest request, Pageable pageable);
 }

@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class AnswerRequest {
-    private String answerText;
+    private String answer;  // Changed from answerText to match frontend
 }
