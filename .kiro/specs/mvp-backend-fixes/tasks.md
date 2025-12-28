@@ -72,6 +72,14 @@ Bu implementation plan, e-commerce MVP'si için kritik backend sorunlarını ç�
   - Stok kontrolünü stockQuantity field'ı ile yap
   - _Requirements: 3.4, 6.1, 6.2, 6.3_
 
+- [x] 9. RecommendationService 401 Error Fix
+  - RecommendationService'de 401 Unauthorized hatası düzelt
+  - Guest kullanıcılar için X-Guest-Id header desteği ekle
+  - ProductDto'dan RecommendedProduct formatına dönüşüm ekle
+  - Fallback mekanizmasını SearchService ile entegre et
+  - Deprecated substr method'unu substring ile değiştir
+  - _Requirements: 3.4, 6.1_
+
 - [ ]* 5.1 Resim yükleme UI testleri
   - File upload validation testi
   - Preview functionality testi
@@ -240,6 +248,14 @@ Bu implementation plan, e-commerce MVP'si için kritik backend sorunlarını ç�
 - ✅ All DTOs now match frontend expectations
 - ✅ AdminService supports both creation methods
 - ✅ ProductManagement has complete image upload UI
+- ✅ QuestionManagement has proper cache invalidation
+- ✅ **ProductsPage with comprehensive filtering system implemented**
+- ✅ **SearchService updated to use new pagination endpoint**
+- ✅ **CategoryService and BrandService created for filter data**
+- ✅ **MegaMenu integrated into MainLayout**
+- ✅ **UI components (Checkbox, Slider, ProductSort) created**
+- ✅ **ProductsPage route added to App.tsx**
+- ✅ **RecommendationService 401 error fixed with guest ID support** ✅
 - ✅ QuestionManagement has proper cache invalidation
 - ✅ **ProductsPage with comprehensive filtering system implemented**
 - ✅ **SearchService updated to use new pagination endpoint**

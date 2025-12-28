@@ -77,8 +77,12 @@ public class ProductController {
     }
 
     // --- HALKA AÇIK İŞLEMLER (Public) ---
-    // SecurityConfig'de .permitAll() yapıldığı için burada token sormaz.
 
+    // 👇 EKLENEN KISIM: Recommendation Service'in kullandığı toplu ürün çekme endpoint'i
+    @GetMapping("/ids")
+    public ResponseEntity<List<ProductDetailResponseDto>> getProductsByIds(@RequestParam List<String> ids) {
+        return ResponseEntity.ok(productService.findAllByIds(ids));
+    }
     @GetMapping("/featured")
     public ResponseEntity<List<ProductDetailResponseDto>> getFeaturedProducts(
             @RequestParam(defaultValue = "6") int limit) {

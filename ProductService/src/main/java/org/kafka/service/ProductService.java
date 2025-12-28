@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,9 +30,20 @@ public class ProductService {
     private final S3Service s3Service;
     private final DomainHelper domainHelper;
     private final ProductMapper productMapper;
-
-    // --- YENİ EKLENEN ---
     private final SearchEventPublisher searchEventPublisher;
+
+    // --- YENİ EKLENEN METOT ---
+    @Transactional(readOnly = true)
+    public List<ProductDetailResponseDto> findAllByIds(List<String> ids) {
+        // Gelen listedeki sadece sayısal olan ID'leri al (örn: "urun-5" elenir, "101" alınır)
+        List<Long> longIds = ids.stream()
+                .filter(id -> id != null && id.matches("\\d+"))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+
+        List<Product> products = productRepository.findAllById(longIds);
+        return productMapper.toDetailResponseList(products);
+    }
 
     // --- CREATE ---
 

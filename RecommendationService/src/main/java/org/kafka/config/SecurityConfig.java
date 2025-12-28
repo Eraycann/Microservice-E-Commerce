@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // --- 1. HALKA AÇIK ENDPOINTLER (Public) ---
                         // Misafir kullanıcılar da öneri alabilmeli (GuestID ile)
-                        .requestMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/recommendations/**").permitAll()
 
                         // Swagger & Actuator
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
