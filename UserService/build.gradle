@@ -3,14 +3,19 @@ dependencies {
     implementation libs.springBootDataMongo
     implementation libs.springBootDataRedis
     implementation libs.springCloudEurekaClient
-    implementation libs.springSecurityOAuth2ResourceServer // Token doğrulamak için şart
+    implementation libs.springSecurityOAuth2ResourceServer
     implementation libs.springSecurityConfig
-    implementation libs.keycloakAdminClient // Keycloak Admin API'si ile iletişim için eklendi
-    implementation libs.springBootStarterAmqp // RabbitMQ
+    implementation libs.keycloakAdminClient
+    implementation libs.springBootStarterAmqp
+
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 
-    // --- FEIGN CLIENT (YENİ) ---
-    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    // Feign Client
     implementation libs.springCloudStarterOpenFeign
+
+    // ✅ ZIPKIN & TRACING BAĞIMLILIKLARI (EKLENDİ)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 }

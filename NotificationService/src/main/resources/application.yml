@@ -5,9 +5,7 @@ spring:
   application:
     name: notification-service
 
-  # --- GÜVENLİK (BU KISIM EKLENDİ) ---
-  # Resource Server bağımlılığı olduğu için bu ayar şarttır.
-  # Yoksa uygulama "JwtDecoder bulunamadı" hatası verir.
+  # --- GÜVENLİK ---
   security:
     oauth2:
       resourceserver:
@@ -33,12 +31,12 @@ spring:
     password: guest
     listener:
       simple:
-        default-requeue-rejected: false # Hata alınca sonsuz döngüye girme, DLQ'ya at.
+        default-requeue-rejected: false
         retry:
           enabled: true
-          initial-interval: 2000ms # İlk hata: 2sn bekle
-          max-interval: 10000ms    # Max bekleme: 10sn
-          max-attempts: 3          # Toplam 3 kere dene, olmazsa DLQ'ya postala.
+          initial-interval: 2000ms
+          max-interval: 10000ms
+          max-attempts: 3
           multiplier: 2
 
   # --- MAIL (SMTP) AYARLARI ---
@@ -46,8 +44,6 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: sivrieraycan@gmail.com
-    # GÜVENLİK UYARISI: Bu şifreyi kodda açık tutmak yerine Environment Variable kullanmanı öneririm.
-    # Örn: ${GMAIL_APP_PASSWORD}
     password: kyeo taru nrle joek
     properties:
       mail:
@@ -62,3 +58,17 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+# ✅ ZIPKIN AYARLARI EKLENDİ
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+# ✅ LOGLAMA AYARLARI EKLENDİ
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

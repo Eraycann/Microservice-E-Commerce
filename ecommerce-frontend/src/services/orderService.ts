@@ -1,8 +1,7 @@
 /**
  * Order Service
- * 
- * Backend OrderService API'larına uygun sipariş servisi
- * OrderController entegrasyonu
+ * * Backend OrderService API'larına uygun sipariş servisi.
+ * Çift istek (double-request) koruması eklenmiştir.
  */
 
 import { apiClient } from '@/lib/axios'
@@ -15,6 +14,9 @@ import type {
 export class OrderService {
   private static instance: OrderService
   private readonly baseUrl = '/api/v1/orders'
+  
+  // 🔥 KİLİT MEKANİZMASI: Aynı anda sadece bir sipariş isteğine izin ver
+  private isRequestInProgress = false
 
   private constructor() {}
 
@@ -30,8 +32,18 @@ export class OrderService {
   /**
    * Sipariş ver
    * Backend: POST /api/v1/orders
+   * * Çift tıklamayı önlemek için request kilidi kullanır.
    */
   async placeOrder(orderData: CreateOrderRequest): Promise<OrderResponse> {
+    // 1. Eğer halihazırda bir işlem sürüyorsa, yenisini engelle
+    if (this.isRequestInProgress) {
+      console.warn('[OrderService] Önceki sipariş işlemi henüz tamamlanmadı. İstek engellendi.')
+      return Promise.reject(new Error('İşlem devam ediyor, lütfen bekleyin.'))
+    }
+
+    // 2. Kilidi aç (İşlem başladı)
+    this.isRequestInProgress = true
+
     try {
       const response = await apiClient.post<OrderResponse>(
         this.baseUrl,
@@ -42,6 +54,9 @@ export class OrderService {
     } catch (error: any) {
       console.error('[OrderService] Sipariş verme hatası:', error)
       throw this.createOrderError(error, 'Sipariş verilirken bir hata oluştu')
+    } finally {
+      // 3. İşlem başarılı da olsa, hatalı da olsa kilidi kaldır (İşlem bitti)
+      this.isRequestInProgress = false
     }
   }
 
@@ -83,7 +98,7 @@ export class OrderService {
     }
     
     if (error.response?.status === 409) {
-      return new Error('Stok yetersiz veya ürün mevcut değil')
+      return new Error('Stok yetersiz veya ürün güncellendi')
     }
     
     if (error.response?.status === 404) {
@@ -91,7 +106,7 @@ export class OrderService {
     }
     
     if (error.code === 'NETWORK_ERROR' || !error.response) {
-      return new Error('Ağ bağlantısı hatası')
+      return new Error('Sunucuya erişilemiyor, lütfen internet bağlantınızı kontrol edin.')
     }
     
     return new Error(error.response?.data?.message || defaultMessage)
@@ -103,6 +118,7 @@ export const orderService = OrderService.getInstance()
 
 /**
  * Order yardımcı fonksiyonları
+ * (Formatting, Translations vb.)
  */
 export const OrderUtils = {
   /**
@@ -116,14 +132,15 @@ export const OrderUtils = {
       'SHIPPED': 'Kargoya Verildi',
       'DELIVERED': 'Teslim Edildi',
       'CANCELLED': 'İptal Edildi',
-      'REFUNDED': 'İade Edildi'
+      'REFUNDED': 'İade Edildi',
+      'FAILED': 'Başarısız'
     }
     
     return statusMap[status] || status
   },
 
   /**
-   * Sipariş durumu rengini getir
+   * Sipariş durumu rengini getir (Tailwind sınıfları)
    */
   getOrderStatusColor(status: string): string {
     const colorMap: Record<string, string> = {
@@ -133,14 +150,15 @@ export const OrderUtils = {
       'SHIPPED': 'text-orange-600 bg-orange-50 border-orange-200',
       'DELIVERED': 'text-green-600 bg-green-50 border-green-200',
       'CANCELLED': 'text-red-600 bg-red-50 border-red-200',
-      'REFUNDED': 'text-gray-600 bg-gray-50 border-gray-200'
+      'REFUNDED': 'text-gray-600 bg-gray-50 border-gray-200',
+      'FAILED': 'text-red-600 bg-red-50 border-red-200'
     }
     
     return colorMap[status] || 'text-gray-600 bg-gray-50 border-gray-200'
   },
 
   /**
-   * Fiyatı formatla
+   * Fiyatı formatla (TRY)
    */
   formatPrice(price: number, currency: string = 'TRY'): string {
     return new Intl.NumberFormat('tr-TR', {
@@ -150,9 +168,10 @@ export const OrderUtils = {
   },
 
   /**
-   * Tarihi formatla
+   * Tarihi formatla (Gün Ay Yıl Saat:Dakika)
    */
   formatOrderDate(dateString: string): string {
+    if (!dateString) return '-'
     const date = new Date(dateString)
     return new Intl.DateTimeFormat('tr-TR', {
       year: 'numeric',
@@ -164,13 +183,14 @@ export const OrderUtils = {
   },
 
   /**
-   * Sipariş numarasını formatla
+   * Sipariş numarasını formatla (#ORD-XXXX)
    */
   formatOrderNumber(orderNumber: string): string {
-    // Örnek: ORD-2024-001234 -> #ORD-001234
-    if (orderNumber.includes('-')) {
+    if (!orderNumber) return '#-'
+    // UUID veya uzun ID gelirse son 6 haneyi göster
+    if (orderNumber.length > 10 && orderNumber.includes('-')) {
       const parts = orderNumber.split('-')
-      return `#${parts[0]}-${parts[parts.length - 1]}`
+      return `#ORD-${parts[parts.length - 1].toUpperCase()}`
     }
     return `#${orderNumber}`
   },
@@ -184,18 +204,18 @@ export const OrderUtils = {
     }
     
     if (address.trim().length < 10) {
-      return { valid: false, error: 'Teslimat adresi çok kısa' }
+      return { valid: false, error: 'Teslimat adresi çok kısa, lütfen detaylandırın.' }
     }
     
     if (address.trim().length > 500) {
-      return { valid: false, error: 'Teslimat adresi çok uzun' }
+      return { valid: false, error: 'Teslimat adresi çok uzun.' }
     }
     
     return { valid: true }
   },
 
   /**
-   * Sipariş özetini oluştur
+   * Sipariş özetini tek satırda oluştur
    */
   createOrderSummary(order: OrderResponse): string {
     const status = this.translateOrderStatus(order.status)

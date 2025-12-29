@@ -7,3 +7,9 @@ scipy==1.12.0
 implicit==0.7.2
 pydantic==2.6.1
 python-dotenv==1.0.1
+# --- OpenTelemetry (Zipkin & Tracing) ---
+opentelemetry-api==1.22.0
+opentelemetry-sdk==1.22.0
+opentelemetry-instrumentation-fastapi==0.43b0
+opentelemetry-instrumentation-pymongo==0.43b0
+opentelemetry-exporter-zipkin==1.22.0

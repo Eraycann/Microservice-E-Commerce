@@ -4,6 +4,8 @@ import { useAuth } from '@/features/auth'
 import { UserProfileForm } from '@/components/user/UserProfileForm'
 import AddressManager from '@/components/user/AddressManagerComponent'
 import { userService } from '@/services/userService'
+import { orderService } from '@/services/orderService' // 🔥 OrderService eklendi
+import { OrderUtils } from '@/services/orderService' // 🔥 Yardımcı utils
 import { Button } from '@/components/ui/button'
 import { 
   User, 
@@ -13,13 +15,13 @@ import {
   CreditCard,
   Loader2,
   AlertCircle,
-  Edit
+  Edit,
+  ChevronRight
 } from 'lucide-react'
 
 /**
  * ProfilePage Component
- * 
- * Backend UserController API'larına uygun kullanıcı profil sayfası
+ * * Backend UserController API'larına uygun kullanıcı profil sayfası
  */
 export const ProfilePage: React.FC = () => {
   const { user: authUser } = useAuth()
@@ -34,10 +36,10 @@ export const ProfilePage: React.FC = () => {
     initialData: authUser
   })
 
-  // Sipariş geçmişini getir
+  // 🔥 Sipariş geçmişini OrderService üzerinden getir
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ['user', 'orders'],
-    queryFn: () => userService.getOrders(0, 5), // İlk 5 sipariş
+    queryFn: () => orderService.getUserOrders(0, 5), // İlk 5 sipariş
     enabled: !!authUser
   })
 
@@ -168,11 +170,11 @@ export const ProfilePage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Ad</label>
-                        <p className="text-lg mt-1">{user.firstName}</p>
+                        <p className="text-lg mt-1 font-medium">{user.firstName}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Soyad</label>
-                        <p className="text-lg mt-1">{user.lastName}</p>
+                        <p className="text-lg mt-1 font-medium">{user.lastName}</p>
                       </div>
                       <div className="md:col-span-2">
                         <label className="text-sm font-medium text-muted-foreground">E-posta</label>
@@ -180,11 +182,11 @@ export const ProfilePage: React.FC = () => {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Telefon</label>
-                        <p className="text-lg mt-1">{user.phoneNumber || 'Belirtilmemiş'}</p>
+                        <p className="text-lg mt-1">{user.phoneNumber || '-'}</p>
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Vergi No</label>
-                        <p className="text-lg mt-1">{user.taxNumber || 'Belirtilmemiş'}</p>
+                        <p className="text-lg mt-1">{user.taxNumber || '-'}</p>
                       </div>
                     </div>
                   </div>
@@ -223,8 +225,8 @@ export const ProfilePage: React.FC = () => {
                           Siparişler ve promosyonlar hakkında güncellemeler alın
                         </p>
                       </div>
-                      <div className="text-sm">
-                        {user.notificationSettings?.emailEnabled ? 'Etkin' : 'Devre Dışı'}
+                      <div className="text-sm font-medium text-green-600">
+                        Etkin
                       </div>
                     </div>
                     
@@ -235,26 +237,14 @@ export const ProfilePage: React.FC = () => {
                           SMS ile sipariş güncellemeleri alın
                         </p>
                       </div>
-                      <div className="text-sm">
-                        {user.notificationSettings?.smsEnabled ? 'Etkin' : 'Devre Dışı'}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Push Bildirimleri</p>
-                        <p className="text-sm text-muted-foreground">
-                          Tarayıcı bildirimleri alın
-                        </p>
-                      </div>
-                      <div className="text-sm">
-                        {user.notificationSettings?.pushEnabled ? 'Etkin' : 'Devre Dışı'}
+                      <div className="text-sm font-medium text-gray-500">
+                        Devre Dışı
                       </div>
                     </div>
                   </div>
                   
-                  <Button variant="outline" size="sm" className="mt-4">
-                    Ayarları Güncelle
+                  <Button variant="outline" size="sm" className="mt-4" disabled>
+                    Ayarları Güncelle (Yakında)
                   </Button>
                 </div>
 
@@ -275,18 +265,6 @@ export const ProfilePage: React.FC = () => {
                       </div>
                       <Button variant="outline" size="sm">
                         Şifre Değiştir
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">İki Faktörlü Doğrulama</p>
-                        <p className="text-sm text-muted-foreground">
-                          Hesabınızı daha güvenli hale getirin
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        Etkinleştir
                       </Button>
                     </div>
                   </div>
@@ -320,8 +298,9 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ ordersData, isLoading }) =>
     )
   }
 
-  // Backend'den gelen veri yapısını kontrol et
-  const orders = ordersData?.data || ordersData || []
+  // 🔥 GÜVENLİ VERİ ÇEKME: Pagination yapısını (.content) kontrol et
+  // Eğer ordersData.content varsa onu al, yoksa ordersData bir diziyse onu al, hiçbiri değilse boş dizi
+  const orders = ordersData?.content || (Array.isArray(ordersData) ? ordersData : [])
 
   return (
     <div className="bg-card border rounded-lg p-6">
@@ -330,57 +309,59 @@ const OrderHistory: React.FC<OrderHistoryProps> = ({ ordersData, isLoading }) =>
           <Package className="h-5 w-5" />
           <h2 className="text-xl font-semibold">Sipariş Geçmişi</h2>
         </div>
-        <Button variant="outline" size="sm">
-          Tüm Siparişleri Görüntüle
-        </Button>
+        {orders.length > 0 && (
+          <Button variant="outline" size="sm">
+            Tüm Siparişleri Görüntüle
+          </Button>
+        )}
       </div>
       
       {orders.length > 0 ? (
         <div className="space-y-4">
           {orders.map((order: any) => (
-            <div key={order.orderNumber} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
+            <div key={order.id || order.orderNumber} className="border rounded-lg p-4 hover:border-primary/50 transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <div>
-                  <p className="font-medium">Sipariş #{order.orderNumber}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(order.createdAt).toLocaleDateString('tr-TR')}
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-lg">{OrderUtils.formatOrderNumber(order.orderNumber)}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${OrderUtils.getOrderStatusColor(order.status)}`}>
+                      {OrderUtils.translateOrderStatus(order.status)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {OrderUtils.formatOrderDate(order.createdAt)}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold">
-                    {new Intl.NumberFormat('tr-TR', {
-                      style: 'currency',
-                      currency: 'TRY'
-                    }).format(order.totalPrice)}
+                  <p className="font-bold text-lg text-primary">
+                    {OrderUtils.formatPrice(order.totalPrice)}
                   </p>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                    order.status === 'SHIPPED' ? 'bg-blue-100 text-blue-800' :
-                    order.status === 'PROCESSING' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {order.status === 'DELIVERED' ? 'Teslim Edildi' :
-                     order.status === 'SHIPPED' ? 'Kargoda' :
-                     order.status === 'PROCESSING' ? 'Hazırlanıyor' :
-                     order.status}
-                  </span>
+                  {/* 👇 DÜZELTME BURADA YAPILDI 👇 */}
+                  <p className="text-xs text-muted-foreground">
+                    {/* Önce itemCount'a bak, yoksa listeyi say, o da yoksa 1 göster */}
+                    {order.itemCount || order.orderItems?.length || 1} ürün
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {order.itemCount} ürün
-              </p>
+
+              {/* Sipariş Detay Butonu */}
+              <div className="pt-3 border-t flex justify-end">
+                 <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
+                   Detayları Gör <ChevronRight className="w-4 h-4 ml-1" />
+                 </Button>
+              </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <p className="text-muted-foreground mb-2">Henüz sipariş yok</p>
-          <p className="text-sm text-muted-foreground">
-            İlk siparişinizi vermek için alışverişe başlayın
+        <div className="text-center py-12">
+          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-30" />
+          <p className="text-muted-foreground mb-2 font-medium">Henüz siparişiniz bulunmuyor</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            İlk siparişinizi vermek için ürünlerimize göz atın
           </p>
-          <Button className="mt-4">
-            Ürünlere Göz At
+          <Button onClick={() => window.location.href = '/products'}>
+            Alışverişe Başla
           </Button>
         </div>
       )}

@@ -10,7 +10,6 @@ spring:
     uris: http://localhost:9200
     connection-timeout: 5s
     socket-timeout: 3s
-    # Şifresiz modda çalıştığımız için username/password gerekmez
 
   # --- RABBITMQ AYARLARI ---
   rabbitmq:
@@ -25,10 +24,19 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-# --- LOGLAMA (DEBUG) ---
+# ✅ ZIPKIN AYARLARI EKLENDİ
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+# ✅ LOGLAMA AYARLARI GÜNCELLENDİ
 logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    # Elasticsearch'e giden/gelen ham HTTP trafiğini (JSON) görmek için:
     org.springframework.data.elasticsearch.client.WIRE: TRACE
-    # Spring Data işlemlerini ve sorgu oluşturma süreçlerini görmek için:
     org.springframework.data.elasticsearch.core: DEBUG

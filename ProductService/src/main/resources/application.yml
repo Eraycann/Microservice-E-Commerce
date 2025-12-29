@@ -5,10 +5,10 @@ spring:
   application:
     name: product-service
 
-  # --- VERITABANI (PostgreSQL) ---
+  # --- VERITABANI ---
   datasource:
     url: jdbc:postgresql://localhost:5432/productdb
-    username: postgres  # Eğer diğer servislerde 'admin' kullandıysan burayı da kontrol et
+    username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
 
@@ -24,14 +24,14 @@ spring:
           lob:
             non_contextual_creation: true
 
-  # --- RABBITMQ (Search Service'e event atmak için EKLENDİ) ---
+  # --- RABBITMQ ---
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
 
-  # --- GÜVENLİK (Keycloak) ---
+  # --- GÜVENLİK ---
   security:
     oauth2:
       resourceserver:
@@ -39,7 +39,9 @@ spring:
           issuer-uri: http://localhost:8180/realms/ecommerce-realm
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
-# --- AWS S3 (Dosya Yükleme) ---
+# --- AWS S3 ---
+aws:
+  s3:
 
 
 # --- SERVICE DISCOVERY ---
@@ -47,3 +49,17 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+# ✅ ZIPKIN AYARLARI EKLENDİ
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+# ✅ LOGLAMA AYARLARI EKLENDİ
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

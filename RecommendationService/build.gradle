@@ -4,11 +4,10 @@ dependencies {
     implementation libs.springBootStarterAmqp
     implementation libs.springCloudEurekaClient
 
-    // --- FEIGN CLIENT (YENİ) ---
-    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    // --- FEIGN CLIENT ---
     implementation libs.springCloudStarterOpenFeign
 
-    // --- GÜVENLİK (SECURITY) ---
+    // --- GÜVENLİK ---
     implementation libs.springSecurityOAuth2ResourceServer
     implementation libs.springSecurityConfig
 
@@ -17,4 +16,9 @@ dependencies {
     annotationProcessor libs.lombok
     implementation libs.mapStruct
     annotationProcessor libs.mapStructProcessor
+
+    // ✅ ZIPKIN & TRACING BAĞIMLILIKLARI (EKLENDİ)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 }

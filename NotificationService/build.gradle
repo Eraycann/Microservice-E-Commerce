@@ -2,10 +2,10 @@ dependencies {
     // 1. Temel Web & Data
     implementation libs.springBootStarterWeb
     implementation libs.springBootDataMongo
-    implementation libs.springBootStarterAmqp      // RabbitMQ
+    implementation libs.springBootStarterAmqp
     implementation libs.springCloudEurekaClient
 
-    // 2. Mail & Şablon Motoru (GÜNCELLENDİ)
+    // 2. Mail & Şablon Motoru
     implementation libs.springBootStarterMail
     implementation libs.springBootStarterThymeleaf
 
@@ -13,11 +13,15 @@ dependencies {
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 
-    // --- GÜVENLİK (SECURITY) ---
+    // --- GÜVENLİK ---
     implementation libs.springSecurityOAuth2ResourceServer
     implementation libs.springSecurityConfig
 
-    // --- FEIGN CLIENT (YENİ) ---
-    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    // --- FEIGN CLIENT ---
     implementation libs.springCloudStarterOpenFeign
+
+    // ✅ ZIPKIN & TRACING BAĞIMLILIKLARI (EKLENDİ)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 }

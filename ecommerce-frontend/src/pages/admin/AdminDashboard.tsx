@@ -1,7 +1,6 @@
 /**
  * Admin Dashboard Page
- * 
- * Comprehensive admin dashboard with statistics and management tools
+ * * Comprehensive admin dashboard with statistics and management tools
  * Only accessible to users with admin role
  */
 
@@ -13,6 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/features/auth'
 import { adminService, type AdminStats } from '@/services/adminService'
 import { questionService, type PaginatedQuestions } from '@/services/questionService'
+// 👇 YENİ: AiModelManager import edildi
+import AiModelManager from './AiModelManager'
 import { 
   Users, 
   Package, 
@@ -32,7 +33,7 @@ export const AdminDashboard: React.FC = () => {
   const { user, isAuthenticated } = useAuth()
   const [refreshing, setRefreshing] = useState(false)
 
-  // Dashboard stats query - backend will handle authorization
+  // Dashboard stats query
   const {
     data: stats,
     isLoading: statsLoading,
@@ -45,7 +46,7 @@ export const AdminDashboard: React.FC = () => {
     retry: 2
   })
 
-  // Pending questions query - backend will handle authorization
+  // Pending questions query
   const {
     data: pendingQuestions,
     isLoading: questionsLoading,
@@ -57,7 +58,7 @@ export const AdminDashboard: React.FC = () => {
     retry: 1
   })
 
-  // Access control - only check if authenticated
+  // Access control
   if (!isAuthenticated) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -148,8 +149,11 @@ export const AdminDashboard: React.FC = () => {
           />
         </div>
 
-        {/* Alert Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Alert Cards & System Management */}
+        {/* 👇 GÜNCELLENDİ: 2 sütundan 3 sütuna çıkarıldı ve AiModelManager eklendi */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          
+          {/* 1. Kart: Düşük Stok */}
           <Card className="border-yellow-200 bg-yellow-50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-yellow-800">
@@ -167,6 +171,7 @@ export const AdminDashboard: React.FC = () => {
             </CardContent>
           </Card>
 
+          {/* 2. Kart: Bekleyen Sorular */}
           <Card className="border-blue-200 bg-blue-50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center text-blue-800">
@@ -183,6 +188,9 @@ export const AdminDashboard: React.FC = () => {
               </p>
             </CardContent>
           </Card>
+
+          {/* 3. Kart: Yapay Zeka Yöneticisi (YENİ EKLENDİ) */}
+          <AiModelManager />
         </div>
 
         {/* Quick Actions */}
@@ -238,7 +246,7 @@ export const AdminDashboard: React.FC = () => {
                     <div className="flex-1">
                       <p className="font-medium">{question.userFullName}</p>
                       <p className="text-sm text-muted-foreground mb-2">
-                        {question.question}
+                        {question.questionText || question.question} {/* Fallback eklendi */}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(question.askDate).toLocaleDateString('tr-TR')}

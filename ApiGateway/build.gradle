@@ -17,7 +17,12 @@ dependencies {
     implementation libs.springSessionDataRedis // Session'ı Redis'te tutar
     implementation libs.springBootDataRedis    // Redis bağlantısı
 
-    // --- 5. UTILS ---
+    // --- 5. OBSERVABILITY (ZIPKIN & TRACING) --- ✅ EKLENEN KISIM
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
+    // --- 6. UTILS ---
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 }

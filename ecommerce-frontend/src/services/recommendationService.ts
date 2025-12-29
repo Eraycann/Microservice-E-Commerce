@@ -1,11 +1,11 @@
 /**
  * Recommendation Service
- * Backend ile tam uyumlu, ProductCard bileşenini besleyen servis.
+ * Backend compatible service feeding ProductCard components.
  */
 
 import { apiClient } from '@/lib/axios'
 
-// --- TİPLER ---
+// --- TYPES ---
 export type InteractionEventType = 'VIEW' | 'ADD_TO_CART' | 'PURCHASE'
 
 export interface RecommendedProduct {
@@ -14,24 +14,23 @@ export interface RecommendedProduct {
   description: string
   price: number
   currency: string
-  // Resim varyasyonları
+  // Image variations
   image: string
   imageUrl: string
   images: string[]
   imageUrls: string[]
-  // String alanlar
+  // String fields
   slug: string
   brand: string
   category: string
   active: boolean
   inStock: boolean
-  // 👇 EKSİK OLAN ALAN EKLENDİ
   stockQuantity: number 
   rating: number
   reviewCount: number
 }
 
-// --- YARDIMCI METODLAR (EXPORT EDİLDİ) ---
+// --- HELPER METHODS (EXPORTED) ---
 export const RecommendationUtils = {
   getOrCreateGuestId(): string {
     const key = 'guest_id'
@@ -57,7 +56,7 @@ export const RecommendationUtils = {
   }
 }
 
-// --- SERVİS SINIFI ---
+// --- SERVICE CLASS ---
 export class RecommendationService {
   private static instance: RecommendationService
   private readonly baseUrl = '/api/v1/recommendations'
@@ -76,7 +75,7 @@ export class RecommendationService {
     return RecommendationService.instance
   }
 
-  // ===== Ana Öneri API'si =====
+  // ===== Main Recommendation API =====
 
   async getRecommendations(guestId?: string): Promise<RecommendedProduct[]> {
     try {
@@ -96,9 +95,20 @@ export class RecommendationService {
       return response.data.map(this.convertToProductModel)
 
     } catch (error) {
-      console.error('[Recommendation] Hata:', error)
+      console.error('[Recommendation] Error:', error)
       if (this.config.fallbackToPopular) return this.getFallbackRecommendations()
       return [] 
+    }
+  }
+
+  // 👇 ADDED: Manual Training Trigger for Admin Panel
+  async trainModel(): Promise<string> {
+    try {
+      const response = await apiClient.post<string>(`${this.baseUrl}/train`)
+      return response.data
+    } catch (error) {
+      console.error('[Recommendation] Training failed:', error)
+      throw error
     }
   }
 
@@ -114,7 +124,7 @@ export class RecommendationService {
     }
   }
 
-  // ===== Etkileşim Metodları =====
+  // ===== Interaction Methods =====
 
   async trackProductView(productId: string, userId?: string, guestId?: string) {
     this.sendInteraction(productId, 'VIEW', userId, guestId)
@@ -140,14 +150,14 @@ export class RecommendationService {
     RecommendationUtils.storeInteractionLocally(event)
   }
 
-  // ===== Dönüşüm Metodları =====
+  // ===== Conversion Methods =====
 
   private convertToProductModel(dto: any): RecommendedProduct {
     const img = dto.imageUrl || dto.image || ''
     
     return {
       id: dto.id?.toString() || '',
-      name: dto.name || 'İsimsiz Ürün',
+      name: dto.name || 'Unnamed Product',
       description: dto.description || '',
       price: dto.price || 0,
       currency: 'TRY',
@@ -158,10 +168,9 @@ export class RecommendationService {
       imageUrls: img ? [img] : [],
 
       slug: dto.slug || '',
-      brand: dto.brand || 'Genel',
-      category: dto.category || 'Genel',
+      brand: dto.brand || 'General',
+      category: dto.category || 'General',
 
-      // Stok ve aktiflik zorla true yapıldı (Görseli düzeltmek için)
       active: true,
       inStock: true,
       stockQuantity: 100, 

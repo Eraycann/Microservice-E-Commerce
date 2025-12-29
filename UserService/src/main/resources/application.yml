@@ -1,49 +1,44 @@
 server:
-  port: 8082 # User Service Portu
+  port: 8082
 
 spring:
   application:
     name: user-service
 
-  # --- RABBITMQ AYARLARI (YENİ) ---
+  # --- RABBITMQ AYARLARI ---
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
-    # Mesajları JSON olarak göndermek için listener tarafı (Opsiyonel burada producer biziz ama dursun)
     listener:
       simple:
         default-requeue-rejected: false
 
-  # --- MONGODB AYARLARI (DÜZELTİLMİŞ) ---
+  # --- MONGODB AYARLARI ---
   data:
     mongodb:
       host: localhost
       port: 27017
-      database: ecommerce-user-db # Verilerin yazılacağı yer
-      username: admin             # Docker'da verdiğin kullanıcı adı
-      password: admin             # Docker'da verdiğin şifre
-      authentication-database: admin # <--- KRİTİK AYAR BU! (Kullanıcının kayıtlı olduğu yer)
+      database: ecommerce-user-db
+      username: admin
+      password: admin
+      authentication-database: admin
 
-      # --- REDIS AYARLARI (YENİ) ---
-      redis:
-        host: localhost
-        port: 6379
-        # password: (varsa buraya)
+    # --- REDIS AYARLARI ---
+    redis:
+      host: localhost
+      port: 6379
 
-  # --- CACHE AYARLARI (SADELEŞMİŞ) ---
+  # --- CACHE AYARLARI ---
   cache:
     type: redis
-    # time-to-live ve cache-null-values satırlarını SİL.
-    # Çünkü bunları Java sınıfında (RedisConfig) zaten tanımladık.
 
-  # --- GÜVENLİK (Resource Server) ---
+  # --- GÜVENLİK ---
   security:
     oauth2:
       resourceserver:
         jwt:
-          # Token'ın gerçek olup olmadığını Keycloak'tan sorgular (Offline Validation)
           issuer-uri: http://localhost:8180/realms/ecommerce-realm
           jwk-set-uri: http://localhost:8180/realms/ecommerce-realm/protocol/openid-connect/certs
 
@@ -52,11 +47,22 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-
-
 # KEYCLOAK ADMIN CLIENT AYARLARI
-# User Service'in Keycloak API'si ile konuşabilmesi için gerekli
 keycloak:
   admin:
-    client-id: user-service-client       # Oluşturduğun Client ID
-    client-secret: uRN5hXdF8ET3uO1jAom529UzANZLPMEt # Credentials sekmesinden aldığın kod
+    client-id: user-service-client
+    client-secret: uRN5hXdF8ET3uO1jAom529UzANZLPMEt
+
+# ✅ ZIPKIN AYARLARI EKLENDİ
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+# ✅ LOGLAMA AYARLARI EKLENDİ
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

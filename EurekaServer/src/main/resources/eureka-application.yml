@@ -12,16 +12,11 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
-
-
-# Neden false yapıyoruz?
-
-# Normalde bir mikroservis (örn: User Service),
-#  Eureka'ya bağlanınca "Beni kaydet" der (true) ve "Listeyi bana ver" der (true).
-
-# Ama bu uygulama Zaten Eureka'nın Kendisi.
-
-# register-with-eureka:
-# false: Aynanın karşısına geçip "Merhaba ben Eureka" diye kendine selam vermesine gerek yok.
-
-# fetch-registry: false: Telefon rehberinin aslı zaten kendisinde. Başkasından liste istemesine gerek yok.
+# ✅ ZIPKIN AYARLARI EKLENDİ
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"

@@ -1,45 +1,36 @@
 dependencies {
-    // -------------------------------------------------------------
-    // 1. WEB & API (Controller, Swagger)
-    // -------------------------------------------------------------
+    // 1. WEB & API
     implementation libs.springBootStarterWeb
     implementation libs.swaggerui
 
-    // -------------------------------------------------------------
-    // 2. VERİTABANI KATMANI (PostgreSQL, JPA)
-    // -------------------------------------------------------------
+    // 2. VERİTABANI KATMANI
     implementation libs.springBootDataJpa
     implementation libs.postgreSQL
-    implementation libs.hypersistenceUtils // JSONB gibi gelişmiş tipler için
+    implementation libs.hypersistenceUtils
 
-    // -------------------------------------------------------------
-    // 3. MİKROSERVİS İLETİŞİMİ (Sync & Async)
-    // -------------------------------------------------------------
-    implementation libs.springCloudEurekaClient      // Service Discovery
-    implementation libs.springCloudStarterOpenFeign  // HTTP (Senkron) İletişim (Product/Payment çağırmak için)
-    implementation libs.springBootStarterAmqp        // RabbitMQ (Asenkron) İletişim (Event fırlatmak için)
+    // 3. MİKROSERVİS İLETİŞİMİ
+    implementation libs.springCloudEurekaClient
+    implementation libs.springCloudStarterOpenFeign
+    implementation libs.springBootStarterAmqp
 
-    // -------------------------------------------------------------
-    // 4. GÜVENLİK (OAuth2 & Keycloak)
-    // -------------------------------------------------------------
+    // 4. GÜVENLİK
     implementation libs.springSecurityConfig
     implementation libs.springSecurityOAuth2ResourceServer
 
-    // -------------------------------------------------------------
-    // 5. BULUT & DOSYA (AWS S3)
-    // -------------------------------------------------------------
+    // 5. BULUT & DOSYA
     implementation libs.awsSdkS3
 
-    // -------------------------------------------------------------
-    // 6. ARAÇLAR & UTILS (Mapper, JSON, Lombok)
-    // -------------------------------------------------------------
-    implementation libs.mapStruct               // DTO <-> Entity dönüşümü
-    implementation libs.jacksonDatatypeJsr310   // Tarih formatlama (LocalDate vb. için)
-    compileOnly libs.lombok                     // Kod kısaltma
+    // 6. ARAÇLAR & UTILS
+    implementation libs.mapStruct
+    implementation libs.jacksonDatatypeJsr310
+    compileOnly libs.lombok
 
-    // -------------------------------------------------------------
-    // 7. ANNOTATION PROCESSORS (Derleme Zamanı İşlemleri)
-    // -------------------------------------------------------------
+    // 7. ANNOTATION PROCESSORS
     annotationProcessor libs.lombok
     annotationProcessor libs.mapStructProcessor
+
+    // ✅ ZIPKIN & TRACING BAĞIMLILIKLARI (EKLENDİ)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 }

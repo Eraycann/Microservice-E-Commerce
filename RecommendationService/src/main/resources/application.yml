@@ -1,11 +1,11 @@
 server:
-  port: 8083 # Recommendation Service Portu
+  port: 8083
 
 spring:
   application:
     name: recommendation-service
 
-  # --- MONGODB AYARLARI ---
+  # --- MONGODB ---
   data:
     mongodb:
       host: localhost
@@ -15,7 +15,7 @@ spring:
       password: admin
       authentication-database: admin
 
-  # --- RABBITMQ AYARLARI ---
+  # --- RABBITMQ ---
   rabbitmq:
     host: localhost
     port: 5672
@@ -25,9 +25,7 @@ spring:
       simple:
         default-requeue-rejected: false
 
-  # --- GÜVENLİK (Resource Server) ---
-  # Burası User Service ile aynıdır.
-  # Çünkü aynı Keycloak sunucusuna sorup "Bu imza senin mi?" diyecek.
+  # --- GÜVENLİK ---
   security:
     oauth2:
       resourceserver:
@@ -39,3 +37,17 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+# ✅ ZIPKIN AYARLARI EKLENDİ
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+# ✅ LOGLAMA AYARLARI EKLENDİ
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

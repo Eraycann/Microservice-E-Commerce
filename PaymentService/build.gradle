@@ -4,12 +4,15 @@ dependencies {
     implementation libs.postgreSQL
     implementation libs.springCloudEurekaClient
     implementation libs.springSecurityOAuth2ResourceServer
-    // implementation libs.springSecurityConfig (Gerekirse)
 
     compileOnly libs.lombok
     annotationProcessor libs.lombok
 
-    // --- FEIGN CLIENT (YENİ) ---
-    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    // Feign Client
     implementation libs.springCloudStarterOpenFeign
+
+    // ✅ ZIPKIN & TRACING BAĞIMLILIKLARI (EKLENDİ)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 }

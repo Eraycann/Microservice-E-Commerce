@@ -5,7 +5,7 @@ spring:
   application:
     name: feedback-service
 
-  # --- MULTIPART AYARLARI (YENİ EKLENDİ) ---
+  # --- MULTIPART AYARLARI ---
   servlet:
     multipart:
       enabled: true
@@ -13,11 +13,11 @@ spring:
       max-request-size: 25MB
       file-size-threshold: 2KB
 
-  # --- JACKSON AYARLARI (YENİ EKLENDİ) ---
+  # --- JACKSON AYARLARI ---
   jackson:
     serialization:
-      WRITE_DATES_AS_TIMESTAMPS: false # Tarihleri array yerine ISO String (2025-11-30T...) olarak basar
-    default-property-inclusion: non_null # Null olan alanları JSON cevabından çıkarır (Payload küçülür)
+      WRITE_DATES_AS_TIMESTAMPS: false
+    default-property-inclusion: non_null
 
   # --- MONGODB AYARLARI ---
   data:
@@ -39,7 +39,7 @@ spring:
       simple:
         default-requeue-rejected: false
 
-  # --- GÜVENLİK (Resource Server) ---
+  # --- GÜVENLİK ---
   security:
     oauth2:
       resourceserver:
@@ -51,3 +51,17 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+# ✅ ZIPKIN AYARLARI EKLENDİ
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+# ✅ LOGLAMA AYARLARI EKLENDİ
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

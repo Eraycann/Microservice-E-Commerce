@@ -14,7 +14,7 @@ dependencies {
     // Redis
     implementation libs.springBootDataRedis
 
-    // JSON İşlemleri (Tarih Formatı İçin YENİ EKLENDİ)
+    // JSON İşlemleri
     implementation libs.jacksonDatatypeJsr310
 
     // Boilerplate
@@ -23,7 +23,11 @@ dependencies {
     implementation libs.mapStruct
     annotationProcessor libs.mapStructProcessor
 
-    // --- FEIGN CLIENT (YENİ) ---
-    // Diğer mikroservislerle (Product, User) HTTP üzerinden kolayca konuşmak için
+    // Feign Client
     implementation libs.springCloudStarterOpenFeign
+
+    // ✅ ZIPKIN & TRACING BAĞIMLILIKLARI (EKLENDİ)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
 }

@@ -1,11 +1,16 @@
 from pymongo import MongoClient
 import pandas as pd
-import numpy as np # Eklendi
+import numpy as np
+# 👇 YENİ EKLENDİ: Mongo İzleme Kütüphanesi
+from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
 
 # MongoDB Bağlantısı
 MONGO_URI = "mongodb://admin:admin@localhost:27017/"
 DB_NAME = "ecommerce-recommendation-db"
 COLLECTION_NAME = "user_interactions"
+
+# 👇 YENİ EKLENDİ: MongoDB sorgularını otomatik takip et
+PymongoInstrumentor().instrument()
 
 
 def get_interaction_data():
@@ -17,20 +22,23 @@ def get_interaction_data():
     cursor = collection.find({}, {"userId": 1, "guestId": 1, "productId": 1, "eventType": 1, "_id": 0})
     df = pd.DataFrame(list(cursor))
 
+    # 3. KONTROL: Eğer veri tabanı boşsa boş ama şeması doğru bir DataFrame dön
     if df.empty:
-        return pd.DataFrame(columns=["userId", "productId", "score"])
+        print("⚠️ Veritabanında henüz etkileşim verisi yok. Boş DataFrame dönülüyor.")
+        return pd.DataFrame(columns=['userId', 'guestId', 'productId', 'interactionType', 'final_user_id'])
+
+    # 4. KONTROL: Sütunlar eksikse None olarak ekle
+    if 'userId' not in df.columns:
+        df['userId'] = None
+
+    if 'guestId' not in df.columns:
+        df['guestId'] = None
 
     # --- ID BİRLEŞTİRME MANTIĞI (Unified ID) ---
-    # Eğer userId varsa onu kullan, yoksa guestId'yi kullan.
-    # Bu sayede 'guest-12345' de model için geçerli bir kullanıcı olur.
-
-    # 1. userId boş olan yerlere NaN koy (Garanti olsun)
     df['userId'] = df['userId'].replace('', np.nan)
-
-    # 2. userId NaN ise guestId'yi al, o da yoksa satırı at
     df['final_user_id'] = df['userId'].fillna(df['guestId'])
 
-    # 3. Hala ID'si olmayan çöp verileri temizle
+    # final_user_id'si hala boş olan satırları temizle
     df = df.dropna(subset=['final_user_id'])
 
     # Event Tiplerini Puana Çevir
@@ -40,12 +48,14 @@ def get_interaction_data():
         "PURCHASE": 5
     }
 
-    df["score"] = df["eventType"].map(event_weights)
+    # Eğer eventType sütunu yoksa hata vermemesi için kontrol
+    if 'eventType' in df.columns:
+        df["score"] = df["eventType"].map(event_weights).fillna(1)
+    else:
+        df["score"] = 1
 
-    # GÜNCELLEME: Gruplamayı 'final_user_id'ye göre yap
+    # Gruplama
     df_grouped = df.groupby(["final_user_id", "productId"])["score"].sum().reset_index()
-
-    # Sütun adını tekrar 'userId' yap ki recommender.py şaşırmasın
     df_grouped.rename(columns={"final_user_id": "userId"}, inplace=True)
 
     return df_grouped

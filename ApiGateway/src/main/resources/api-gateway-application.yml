@@ -5,7 +5,7 @@ spring:
   application:
     name: api-gateway
 
-  # 👇👇👇 BURASI EKLENDİ: DOSYA YÜKLEME İZNİ (ÇOK ÖNEMLİ) 👇👇👇
+  # 👇👇👇 DOSYA YÜKLEME İZNİ (ÇOK ÖNEMLİ) 👇👇👇
   main:
     web-application-type: reactive # Gateway'in reaktif olduğunu garantiye alalım
   codec:
@@ -53,8 +53,6 @@ spring:
       # TokenRelay: Cookie'den gelen token'ı mikroservise iletir
       default-filters:
         - TokenRelay
-
-      # ⚠️ DİKKAT: globalcors BURADAN SİLİNDİ (Java Config kullanılıyor)
 
       # --- ROTA TANIMLARI (HEM /api/... HEM /api/v1/... DESTEKLİ) ---
       routes:
@@ -113,11 +111,10 @@ spring:
                 name: paymentCircuitBreaker
                 fallbackUri: forward:/fallback/payment
 
-        # 6. RECOMMENDATION SERVICE (SORUNLU OLAN KISIM ÇÖZÜLDÜ)
+        # 6. RECOMMENDATION SERVICE
         - id: recommendation-service
           uri: lb://recommendation-service
           predicates:
-            # Hem v1 hem normal yolu kabul eder
             - Path=/api/v1/recommendations/**, /api/recommendations/**
           filters:
             - name: CircuitBreaker
@@ -147,15 +144,28 @@ spring:
                 name: feedbackCircuitBreaker
                 fallbackUri: forward:/fallback/feedback
 
-        # 👇👇👇 BURASI EKLENECEK: RESİM YÜKLEME ROTASI 👇👇👇
-        # Frontend "/uploads/resim.jpg" isteği attığında buraya düşecek.
+        # 👇👇👇 RESİM YÜKLEME ROTASI 👇👇👇
         - id: feedback-service-uploads
           uri: lb://feedback-service
           predicates:
             - Path=/uploads/**
-        # 👆👆👆 ------------------------------------------ 👆👆👆
+        # 👆👆👆 ----------------------- 👆👆👆
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+# ✅✅✅ ZIPKIN & TRACING AYARLARI (EKLENDİ) ✅✅✅
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # %100 Her isteği takip et (Development için)
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
+# ✅✅✅ LOGLAMA AYARLARI (EKLENDİ) ✅✅✅
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"

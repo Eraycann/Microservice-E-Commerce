@@ -1,46 +1,32 @@
 dependencies {
-    // ==============================================================
-    // 1. WEB & CORE (API ve Temel İşlevler)
-    // ==============================================================
+    // 1. WEB & CORE
     implementation libs.springBootStarterWeb
-    // ÖNEMLİ EKLEME: Request Body validasyonları (@NotNull, @Min) için şarttır.
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    // ÖNEMLİ EKLEME: Eureka'nın servisin "UP" olduğunu anlaması (Health Check) için şarttır.
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator' // Sağlık kontrolü ve Metrikler
 
-    // ==============================================================
-    // 2. VERİ TABANI & PERSISTENCE (PostgreSQL & Redis)
-    // ==============================================================
+    // 2. DATA
     implementation libs.springBootDataJpa
     implementation libs.postgreSQL
-    implementation libs.springBootDataRedis // Cart (Sepet) işlemleri için
+    implementation libs.springBootDataRedis
 
-    // ==============================================================
-    // 3. MİKROSERVİS İLETİŞİMİ (Eureka & Feign & RabbitMQ)
-    // ==============================================================
-    implementation libs.springCloudEurekaClient         // Discovery
-    implementation libs.springCloudStarterOpenFeign     // Product Service'i çağırmak için
-    implementation libs.springBootStarterAmqp           // Recommendation'a event atmak için (RabbitMQ)
+    // 3. MICROSERVICES
+    implementation libs.springCloudEurekaClient
+    implementation libs.springCloudStarterOpenFeign
+    implementation libs.springBootStarterAmqp
 
-    // ==============================================================
-    // 4. GÜVENLİK (OAuth2 & Keycloak)
-    // ==============================================================
+    // 4. SECURITY
     implementation libs.springSecurityOAuth2ResourceServer
-    // implementation libs.springSecurityConfig // 'resource-server' kütüphanesi genelde core security'i getirir, fazlalık olabilir ama kalmasında zarar yok.
 
-    // ==============================================================
-    // 5. ARAÇLAR & DOKÜMANTASYON
-    // ==============================================================
+    // 5. UTILS
     implementation libs.mapStruct
     implementation libs.swaggerui
-
-    // --- MONITORING & TRACING ---
-    implementation libs.springBootStarterActuator
-    implementation libs.micrometerRegistryPrometheus
-    implementation libs.micrometerTracingBridgeBrave
-    implementation libs.zipkinReporterBrave
-
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     annotationProcessor libs.mapStructProcessor
+
+    // ✅ ZIPKIN & TRACING BAĞIMLILIKLARI
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    // Prometheus (Opsiyonel ama grafana için iyi olur)
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }
